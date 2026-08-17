@@ -1,0 +1,67 @@
+{
+  "services": [
+    {
+      "icon": "board",
+      "tag": "All Boards",
+      "title": "Every Board We Cover",
+      "description": "State Board, CBSE, ICSE, ISC, IGCSE and IB. Whichever syllabus your school follows, we match the right tutor.",
+      "subs": [
+        "State Board",
+        "CBSE",
+        "ICSE",
+        "ISC",
+        "IGCSE",
+        "IB"
+      ]
+    },
+    {
+      "icon": "middle",
+      "tag": "Middle School",
+      "title": "Class V to VIII",
+      "description": "Subject-specialist tutors for Science, Maths, Social Studies and English as concepts get more advanced.",
+      "subs": [
+        "Maths",
+        "Science",
+        "SST",
+        "English",
+        "Hindi"
+      ]
+    },
+    {
+      "icon": "board_exam",
+      "tag": "Board Exams",
+      "title": "Class IX & X Board Prep",
+      "description": "Board exam preparation across all boards, with chapter tests, practice papers and exam strategy.",
+      "subs": [
+        "Physics",
+        "Chemistry",
+        "Biology",
+        "Maths",
+        "SST"
+      ]
+    },
+    {
+      "icon": "senior",
+      "tag": "Senior Secondary",
+      "title": "Class XI & XII",
+      "description": "Science (PCM/PCB), Commerce and Humanities streams, from theory mastery to internal assessments.",
+      "subs": [
+        "Physics",
+        "Accountancy",
+        "Economics",
+        "Computer Sci"
+      ]
+    },
+    {
+      "icon": "entrance",
+      "tag": "Entrance Prep",
+      "title": "Competitive Exams",
+      "description": "NEET, JEE and MHCET foundation and preparation, handled by subject specialists with proven results.",
+      "subs": [
+        "NEET",
+        "JEE",
+        "MHCET"
+      ]
+    }
+  ]
+}

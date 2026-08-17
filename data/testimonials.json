@@ -1,0 +1,22 @@
+{
+  "testimonials": [
+    {
+      "quote": "My son went from failing Maths to scoring 88% in his board exams. The tutor Ace matched us with understood exactly where he was struggling.",
+      "name": "Rekha",
+      "role": "Parent · Nerul",
+      "rating": 5
+    },
+    {
+      "quote": "We tried three other agencies before Ace. None of them followed up after the first match. Ace's team called twice in the first week to check how the demo went.",
+      "name": "Amit",
+      "role": "Parent · Vashi",
+      "rating": 5
+    },
+    {
+      "quote": "My daughter needed help with Class XI Biology for NEET prep. The tutor had eight years of experience. Her concepts are so much clearer now.",
+      "name": "Meena",
+      "role": "Parent · Kharghar",
+      "rating": 5
+    }
+  ]
+}
