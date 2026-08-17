@@ -14,8 +14,8 @@ add (if not already present from elsewhere on the page):
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const ACE_DB = window.supabase.createClient(
-    "https://YOUR-PROJECT-REF.supabase.co",   // same as admin/assets/config.js
-    "YOUR-ANON-PUBLIC-KEY"                     // same as admin/assets/config.js
+    "https://ugpnaobvrzyefokhomvk.supabase.co",   // same as admin/assets/config.js
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVncG5hb2J2cnp5ZWZva2hvbXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTUxMzMsImV4cCI6MjEwMjUzMTEzM30.aTxhqmZffcRM2eezd5pcvjdAR77n-tFEnf35MGOARmc"                     // same as admin/assets/config.js
   );
 </script>
 ```
