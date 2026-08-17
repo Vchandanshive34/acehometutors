@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Dashboard — Ace Admin</title>
+<link rel="stylesheet" href="assets/admin.css">
+</head>
+<body>
+
+<div class="shell">
+  <div id="sidebar-mount"></div>
+  <div class="main">
+    <button class="menu-btn" id="menu-btn">&#9776;</button>
+    <div class="page-head">
+      <div>
+        <h1>Dashboard</h1>
+        <p>Overview of registrations and upcoming sessions.</p>
+      </div>
+    </div>
+
+    <div class="stat-grid" id="stat-grid">
+      <div class="stat-card"><div class="num">—</div><div class="label">Loading…</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>Recently registered students</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Parent</th><th>Student</th><th>Class</th><th>Locality</th><th>Status</th><th>Registered</th></tr></thead>
+          <tbody id="recent-students"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Recently registered teachers</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Subjects</th><th>Locality</th><th>Experience</th><th>Status</th><th>Registered</th></tr></thead>
+          <tbody id="recent-teachers"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(async function init() {
+  const session = await requireAuth();
+  if (!session) return;
+  renderSidebar('dashboard.html');
+  setupMobileMenu();
+
+  const [studentsRes, teachersRes, sessionsRes] = await Promise.all([
+    sb.from('students').select('*').order('created_at', { ascending: false }),
+    sb.from('teachers').select('*').order('created_at', { ascending: false }),
+    sb.from('sessions').select('id, session_date').gte('session_date', new Date().toISOString().slice(0,10))
+  ]);
+
+  const students = studentsRes.data || [];
+  const teachers = teachersRes.data || [];
+  const upcoming = sessionsRes.data || [];
+
+  const newStudents = students.filter(s => s.status === 'new').length;
+  const activeStudents = students.filter(s => s.status === 'active').length;
+  const newTeachers = teachers.filter(t => t.status === 'new').length;
+  const activeTeachers = teachers.filter(t => t.status === 'active').length;
+
+  document.getElementById('stat-grid').innerHTML = `
+    <div class="stat-card"><div class="num gold">${students.length}</div><div class="label">Total students / parents</div></div>
+    <div class="stat-card"><div class="num">${newStudents}</div><div class="label">New, unmatched</div></div>
+    <div class="stat-card"><div class="num teal">${activeStudents}</div><div class="label">Active students</div></div>
+    <div class="stat-card"><div class="num gold">${teachers.length}</div><div class="label">Total teachers</div></div>
+    <div class="stat-card"><div class="num">${newTeachers}</div><div class="label">New, unverified</div></div>
+    <div class="stat-card"><div class="num teal">${activeTeachers}</div><div class="label">Active teachers</div></div>
+    <div class="stat-card"><div class="num">${upcoming.length}</div><div class="label">Upcoming sessions</div></div>
+  `;
+
+  const recentStudents = students.slice(0, 6);
+  document.getElementById('recent-students').innerHTML = recentStudents.length ? recentStudents.map(s => `
+    <tr>
+      <td>${escapeHtml(s.parent_name)}</td>
+      <td>${escapeHtml(s.student_name)}</td>
+      <td class="cell-muted">${escapeHtml(s.student_class || '—')}</td>
+      <td class="cell-muted">${escapeHtml(s.locality || '—')}</td>
+      <td>${badge(s.status)}</td>
+      <td class="cell-muted">${fmtDate(s.created_at)}</td>
+    </tr>`).join('') : `<tr><td colspan="6" class="empty-state">No registrations yet</td></tr>`;
+
+  const recentTeachers = teachers.slice(0, 6);
+  document.getElementById('recent-teachers').innerHTML = recentTeachers.length ? recentTeachers.map(t => `
+    <tr>
+      <td>${escapeHtml(t.full_name)}</td>
+      <td class="cell-muted">${escapeHtml(t.subjects || '—')}</td>
+      <td class="cell-muted">${escapeHtml(t.locality || '—')}</td>
+      <td class="cell-muted">${t.experience_years != null ? t.experience_years + ' yrs' : '—'}</td>
+      <td>${badge(t.status)}</td>
+      <td class="cell-muted">${fmtDate(t.created_at)}</td>
+    </tr>`).join('') : `<tr><td colspan="6" class="empty-state">No registrations yet</td></tr>`;
+})();
+</script>
+</body>
+</html>
