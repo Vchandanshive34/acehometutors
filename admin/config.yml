@@ -7,7 +7,7 @@ backend:
   name: github
   repo: vchandanshive34/acehometutors
   branch: main
-  base_url: https://ace-tutors-cms-auth.yoursubdomain.workers.dev
+  base_url: https://ace-tutors-cms-auth.vchandanshive34.workers.dev
   auth_endpoint: auth
 
 publish_mode: simple
