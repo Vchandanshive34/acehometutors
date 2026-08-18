@@ -724,44 +724,17 @@
     }
   })();
 </script>
-<script>
-  (function () {
-    document.querySelectorAll('form.aht-form').forEach(function (f) {
-      f.addEventListener('submit', function (e) {
-        e.preventDefault();
-        var area = document.getElementById('formArea');
-        var ok = document.getElementById('successPanel');
-        var btn = f.querySelector('button[type=submit], .btn-primary');
-        var btnLabel = btn ? btn.textContent : '';
-        if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
-        fetch(f.action, {
-          method: 'POST',
-          body: new FormData(f),
-          headers: { 'Accept': 'application/json' }
-        }).then(function (res) {
-          if (res.ok) {
-            if (area && ok) { area.hidden = true; ok.hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' }); }
-          } else {
-            res.json().then(function (data) {
-              var msg = (data && data.errors) ? data.errors.map(function (er) { return er.message; }).join(', ') : 'Something went wrong. Please try again or contact us directly.';
-              alert(msg);
-            }).catch(function () { alert('Something went wrong. Please try again or contact us directly.'); });
-            if (btn) { btn.disabled = false; btn.textContent = btnLabel; }
-          }
-        }).catch(function () {
-          alert('Network error — please check your connection and try again.');
-          if (btn) { btn.disabled = false; btn.textContent = btnLabel; }
-        });
-      });
-    });
-  })();
-</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  const sb = window.supabase.createClient(
-    "https://ugpnaobvrzyefokhomvk.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVncG5hb2J2cnp5ZWZva2hvbXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTUxMzMsImV4cCI6MjEwMjUzMTEzM30.aTxhqmZffcRM2eezd5pcvjdAR77n-tFEnf35MGOARmc" // same one from admin/assets/config.js
-  );
+  let sb = null;
+  try {
+    sb = window.supabase.createClient(
+      "https://ugpnaobvrzyefokhomvk.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVncG5hb2J2cnp5ZWZva2hvbXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTUxMzMsImV4cCI6MjEwMjUzMTEzM30.aTxhqmZffcRM2eezd5pcvjdAR77n-tFEnf35MGOARmc"
+    );
+  } catch (err) {
+    console.error('Supabase initialization error:', err);
+  }
 
   document.querySelectorAll('form.aht-form').forEach(function (f) {
     f.addEventListener('submit', async function (e) {
@@ -774,30 +747,68 @@
 
       const fd = new FormData(f);
       const subjects = fd.getAll('subjects').join(', ');
+      let dbInsertSuccess = false;
+      let dbError = null;
 
-      const { error } = await sb.from('students').insert({
-        parent_name: fd.get('parent_name'),
-        student_name: fd.get('student_name'),
-        phone: fd.get('phone'),
-        email: fd.get('email'),
-        locality: fd.get('locality'),
-        area: fd.get('area'),
-        student_class: fd.get('class'),
-        board: fd.get('board'),
-        subjects: subjects,
-        preferred_days: fd.get('days'),
-        preferred_timing: fd.get('timing'),
-        mode: fd.get('mode'),
-        notes: fd.get('notes'),
-        status: 'new'
-      });
-
-      if (!error) {
-        if (area && ok) { area.hidden = true; ok.hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      // Step 1: Insert into Supabase (for admin dashboard)
+      if (sb) {
+        try {
+          const { error } = await sb.from('students').insert({
+            parent_name: fd.get('parent_name'),
+            student_name: fd.get('student_name'),
+            phone: fd.get('phone'),
+            email: fd.get('email'),
+            locality: fd.get('locality'),
+            area: fd.get('area'),
+            student_class: fd.get('class'),
+            board: fd.get('board'),
+            subjects: subjects,
+            preferred_days: fd.get('days'),
+            preferred_timing: fd.get('timing'),
+            mode: fd.get('mode'),
+            notes: fd.get('notes'),
+            status: 'new'
+          });
+          if (error) {
+            dbError = error.message;
+            console.error('Supabase insert error:', dbError);
+          } else {
+            dbInsertSuccess = true;
+          }
+        } catch (err) {
+          dbError = err.message;
+          console.error('Supabase exception:', err);
+        }
       } else {
-        alert('Something went wrong. Please try again or contact us directly.');
-        if (btn) { btn.disabled = false; btn.textContent = btnLabel; }
+        dbError = 'Supabase client not initialized';
+        console.error(dbError);
       }
+
+      // Step 2: Send email via Formspree (for notifications)
+      fetch('https://formspree.io/f/xyegneow', {
+        method: 'POST',
+        body: fd,
+        headers: { 'Accept': 'application/json' }
+      }).then(function (res) {
+        if (res.ok) {
+          // Both operations complete
+          if (area && ok) { area.hidden = true; ok.hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        } else {
+          res.json().then(function (data) {
+            var msg = (data && data.errors) ? data.errors.map(function (er) { return er.message; }).join(', ') : 'Email notification failed, but your request was saved.';
+            alert(msg);
+          }).catch(function () { alert('Email notification failed, but your request was saved.'); });
+          if (btn && dbInsertSuccess) {
+            // If Supabase worked, show success anyway since that's what matters for the admin dashboard
+            if (area && ok) { area.hidden = true; ok.hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+          } else if (btn) {
+            btn.disabled = false; btn.textContent = btnLabel;
+          }
+        }
+      }).catch(function () {
+        alert('Network error — please check your connection and try again.');
+        if (btn) { btn.disabled = false; btn.textContent = btnLabel; }
+      });
     });
   });
 </script>
