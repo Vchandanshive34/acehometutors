@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Students / Parents — Ace Admin</title>
+<link rel="stylesheet" href="assets/admin.css">
+</head>
+<body>
+
+<div class="shell">
+  <div id="sidebar-mount"></div>
+  <div class="main">
+    <div id="topbar-mount"></div>
+    <div class="content">
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Student enquiries</h2>
+          <span class="hint" id="count-hint"></span>
+          <span class="spacer"></span>
+          <button class="btn btn-primary" onclick="openAddModal()">+ Add student</button>
+        </div>
+
+        <div class="panel-body toolbar">
+          <input type="search" class="search-input" id="search" placeholder="Search by name, phone, locality…">
+          <select id="filter-status">
+            <option value="">All statuses</option>
+            <option value="new">New</option>
+            <option value="matched">Matched</option>
+            <option value="demo_scheduled">Demo scheduled</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+
+        <div class="tbl-scroll">
+          <table class="data" style="min-width:980px">
+            <thead>
+              <tr>
+                <th>Student</th><th>Phone</th><th>Class</th>
+                <th>Subjects</th><th>Status</th><th>Date</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="rows"><tr><td colspan="7" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-backdrop" id="student-modal">
+  <div class="modal">
+    <h3 id="modal-title">Add student</h3>
+    <form id="student-form">
+      <input type="hidden" id="s-id">
+      <div class="form-grid">
+        <div class="field"><label>Parent's full name *</label><input type="text" id="s-parent" required></div>
+        <div class="field"><label>Student's name *</label><input type="text" id="s-student" required></div>
+        <div class="field"><label>Phone (WhatsApp) *</label><input type="tel" id="s-phone" required></div>
+        <div class="field"><label>Email</label><input type="email" id="s-email"></div>
+        <div class="field"><label>Date of birth</label><input type="date" id="s-dob"></div>
+        <div class="field"><label>School / college</label><input type="text" id="s-school"></div>
+        <div class="field"><label>Locality</label><input type="text" id="s-locality"></div>
+        <div class="field"><label>Specific area / society</label><input type="text" id="s-area"></div>
+        <div class="field">
+          <label>Class</label>
+          <select id="s-class">
+            <option value="">Select</option>
+            <option>Class V</option><option>Class VI</option><option>Class VII</option><option>Class VIII</option>
+            <option>Class IX</option><option>Class X</option>
+            <option>Class XI (Science)</option><option>Class XI (Commerce)</option><option>Class XI (Humanities)</option>
+            <option>Class XII (Science)</option><option>Class XII (Commerce)</option><option>Class XII (Humanities)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Board</label>
+          <select id="s-board">
+            <option value="">Select</option>
+            <option>State Board</option><option>CBSE</option><option>ICSE</option><option>ISC</option><option>IGCSE</option><option>IB</option><option>Other</option>
+          </select>
+        </div>
+        <div class="field full"><label>Subjects needed (comma-separated)</label><input type="text" id="s-subjects" placeholder="Maths, Science"></div>
+        <div class="field"><label>Preferred days</label><input type="text" id="s-days" placeholder="Weekdays"></div>
+        <div class="field"><label>Preferred timing</label><input type="text" id="s-timing" placeholder="Evening (5-8 PM)"></div>
+        <div class="field">
+          <label>Mode</label>
+          <select id="s-mode"><option value="">Select</option><option>Home</option><option>Online</option><option>Either</option></select>
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select id="s-status">
+            <option value="new">New</option><option value="matched">Matched</option>
+            <option value="demo_scheduled">Demo scheduled</option><option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div class="field full"><label>Special requirements</label><textarea id="s-notes" rows="2"></textarea></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('student-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script src="assets/app.js"></script>
+<script>
+let allStudents = [];
+
+async function loadStudents() {
+  const { data, error } = await sb.from('students').select('*').order('created_at', { ascending: false });
+  if (error) { toast('Failed to load: ' + error.message, true); return; }
+  allStudents = data || [];
+  renderRows();
+}
+
+function renderRows() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const statusFilter = document.getElementById('filter-status').value;
+  let rows = allStudents.filter(s => {
+    if (statusFilter && s.status !== statusFilter) return false;
+    if (!q) return true;
+    return [s.parent_name, s.student_name, s.phone, s.locality, s.area]
+      .filter(Boolean).some(v => v.toLowerCase().includes(q));
+  });
+
+  const hint = document.getElementById('count-hint');
+  if (hint) hint.textContent = rows.length + ' of ' + allStudents.length;
+
+  document.getElementById('rows').innerHTML = rows.length ? rows.map(s => `
+    <tr>
+      <td>${person(s.student_name, [s.parent_name, s.locality, s.board].filter(Boolean).join(' · '))}</td>
+      <td class="phone">${escapeHtml(s.phone)}</td>
+      <td class="muted">${escapeHtml(s.student_class || '—')}</td>
+      <td>${subjectChips(s.subjects, 2)}</td>
+      <td>${badge(s.status)}</td>
+      <td class="muted">${fmtDate(s.created_at)}</td>
+      <td class="row-actions">
+        <a class="rowbtn" href="calendar.html?student=${s.id}">Calendar</a>
+        <button class="rowbtn" onclick="openEditModal('${s.id}')">Edit</button>
+        <button class="rowbtn" onclick="deleteStudent('${s.id}')">Delete</button>
+      </td>
+    </tr>`).join('') : `<tr><td colspan="7" class="empty-state"><div class="big">No students found</div>Try a different search, or add a new student.</td></tr>`;
+}
+
+document.getElementById('search').addEventListener('input', renderRows);
+document.getElementById('filter-status').addEventListener('change', renderRows);
+
+function clearForm() {
+  ['s-id','s-parent','s-student','s-phone','s-email','s-dob','s-school','s-locality','s-area',
+   's-class','s-board','s-subjects','s-days','s-timing','s-mode','s-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('s-status').value = 'new';
+}
+
+function openAddModal() {
+  clearForm();
+  document.getElementById('modal-title').textContent = 'Add student';
+  openModal('student-modal');
+}
+
+function openEditModal(id) {
+  const s = allStudents.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('modal-title').textContent = 'Edit student';
+  document.getElementById('s-id').value = s.id;
+  document.getElementById('s-parent').value = s.parent_name || '';
+  document.getElementById('s-student').value = s.student_name || '';
+  document.getElementById('s-phone').value = s.phone || '';
+  document.getElementById('s-email').value = s.email || '';
+  document.getElementById('s-dob').value = s.dob || '';
+  document.getElementById('s-school').value = s.school || '';
+  document.getElementById('s-locality').value = s.locality || '';
+  document.getElementById('s-area').value = s.area || '';
+  document.getElementById('s-class').value = s.student_class || '';
+  document.getElementById('s-board').value = s.board || '';
+  document.getElementById('s-subjects').value = s.subjects || '';
+  document.getElementById('s-days').value = s.preferred_days || '';
+  document.getElementById('s-timing').value = s.preferred_timing || '';
+  document.getElementById('s-mode').value = s.mode || '';
+  document.getElementById('s-status').value = s.status || 'new';
+  document.getElementById('s-notes').value = s.special_requirements || '';
+  openModal('student-modal');
+}
+
+async function deleteStudent(id) {
+  if (!confirm('Delete this student\'s record? This also removes their scheduled sessions. This cannot be undone.')) return;
+  const { error } = await sb.from('students').delete().eq('id', id);
+  if (error) { toast('Delete failed: ' + error.message, true); return; }
+  toast('Student deleted');
+  loadStudents();
+}
+
+document.getElementById('student-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('s-id').value;
+  const payload = {
+    parent_name: document.getElementById('s-parent').value.trim(),
+    student_name: document.getElementById('s-student').value.trim(),
+    phone: document.getElementById('s-phone').value.trim(),
+    email: document.getElementById('s-email').value.trim() || null,
+    dob: document.getElementById('s-dob').value || null,
+    school: document.getElementById('s-school').value.trim() || null,
+    locality: document.getElementById('s-locality').value.trim() || null,
+    area: document.getElementById('s-area').value.trim() || null,
+    student_class: document.getElementById('s-class').value || null,
+    board: document.getElementById('s-board').value || null,
+    subjects: document.getElementById('s-subjects').value.trim() || null,
+    preferred_days: document.getElementById('s-days').value.trim() || null,
+    preferred_timing: document.getElementById('s-timing').value.trim() || null,
+    mode: document.getElementById('s-mode').value || null,
+    status: document.getElementById('s-status').value,
+    special_requirements: document.getElementById('s-notes').value.trim() || null,
+  };
+
+  const { error } = id
+    ? await sb.from('students').update(payload).eq('id', id)
+    : await sb.from('students').insert(payload);
+
+  if (error) { toast('Save failed: ' + error.message, true); return; }
+  toast('Saved');
+  closeModal('student-modal');
+  loadStudents();
+});
+
+(async function init() {
+  const session = await requireAuth();
+  if (!session) return;
+  renderSidebar('students.html');
+  renderTopbar({
+    title: 'Students',
+    subtitle: 'Leads from the &ldquo;Find a Tutor&rdquo; form',
+    search: false
+  });
+  loadStudents();
+})();
+</script>
+</body>
+</html>

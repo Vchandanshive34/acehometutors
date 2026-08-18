@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Self-check — Ace Admin</title>
+<link rel="stylesheet" href="assets/admin.css">
+<style>
+  .lede { color: var(--ink-soft); font-size: .9rem; margin: 0 0 1.2rem; max-width: 70ch; }
+  .check { border: 1px solid var(--line); border-radius: 10px; padding: .9rem 1rem; margin: .7rem 0; background: var(--panel-2); }
+  .check h3 { margin: 0 0 .2rem; font-size: .95rem; display: flex; gap: .55rem; align-items: center; }
+  .check p { margin: .2rem 0 0; font-size: .85rem; color: var(--ink-soft); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--ink-faint); }
+  .pass .dot { background: var(--ok); } .fail .dot { background: var(--urgent); } .warn .dot { background: var(--warn); }
+  code { background: var(--panel); border: 1px solid var(--line); padding: .05rem .35rem; border-radius: 4px; font-size: .8rem; }
+  pre { background: var(--panel); border: 1px solid var(--line); padding: .65rem .8rem; border-radius: 8px;
+        overflow-x: auto; font-size: .78rem; margin: .5rem 0 0; white-space: pre-wrap; word-break: break-word; }
+  .fix { margin-top: .6rem; padding: .6rem .75rem; border-left: 3px solid var(--warn);
+         background: var(--warn-bg); color: var(--ink); border-radius: 0 8px 8px 0; font-size: .85rem; }
+  .check a { color: var(--blue-deep); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="shell">
+<div id="sidebar-mount"></div>
+<div class="main">
+<div id="topbar-mount"></div>
+<div class="content">
+<section class="panel"><div class="panel-body">
+  <p class="lede">
+    Runs the exact same steps a visitor's form submission takes, and reports the
+    real error if any step fails. It writes one test row and then leaves it in
+    the Students table tagged <code>SELF-CHECK</code> so you can confirm it
+    appears in the admin panel &mdash; delete it afterwards.
+  </p>
+
+  <button class="btn btn-primary" id="run">Run the check</button>
+  <div id="out"></div>
+</div></section>
+</div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  renderSidebar('diagnose.html');
+  renderTopbar({ title: 'Self-check', subtitle: 'Confirm website forms are reaching the database', search: false });
+
+  var out = document.getElementById('out');
+  var btn = document.getElementById('run');
+
+  function card(state, title, detail, raw, fix) {
+    var d = document.createElement('div');
+    d.className = 'check ' + state;
+    var html = '<h3><span class="dot"></span>' + title + '</h3>';
+    if (detail) html += '<p>' + detail + '</p>';
+    if (raw) html += '<pre>' + String(raw).replace(/</g, '&lt;') + '</pre>';
+    if (fix) html += '<div class="fix">' + fix + '</div>';
+    d.innerHTML = html;
+    out.appendChild(d);
+    return d;
+  }
+
+  // The exact columns the public forms write to.
+  var STUDENT_COLS = ['parent_name','student_name','phone','email','dob','school',
+    'locality','area','student_class','board','subjects','preferred_days',
+    'preferred_timing','mode','special_requirements','status'];
+  var TEACHER_COLS = ['full_name','phone','email','locality','area','subjects',
+    'classes_taught','boards','experience_years','qualification','availability','notes','status'];
+
+  btn.addEventListener('click', async function () {
+    btn.disabled = true;
+    out.innerHTML = '';
+
+    // 1. Config present
+    if (!window.ACE_SUPABASE_URL || !window.ACE_SUPABASE_ANON_KEY) {
+      card('fail', 'Supabase config missing', 'admin/assets/config.js did not load, or the values are blank.',
+        null, 'Fill in <code>ACE_SUPABASE_URL</code> and <code>ACE_SUPABASE_ANON_KEY</code> in <code>admin/assets/config.js</code> (Supabase &rarr; Project Settings &rarr; API).');
+      btn.disabled = false; return;
+    }
+    card('pass', 'Supabase config loaded', window.ACE_SUPABASE_URL);
+
+    // 2. Library loaded
+    if (!window.supabase || !window.supabase.createClient) {
+      card('fail', 'Supabase library did not load', 'The CDN script was blocked.',
+        null, 'Check that the page can reach <code>cdn.jsdelivr.net</code> — an ad blocker or office firewall can block it.');
+      btn.disabled = false; return;
+    }
+    card('pass', 'Supabase library loaded');
+
+    var sb = window.supabase.createClient(window.ACE_SUPABASE_URL, window.ACE_SUPABASE_ANON_KEY);
+
+    // 3. Project reachable + tables exist
+    for (var t = 0; t < 2; t++) {
+      var table = ['students', 'teachers'][t];
+      var res = await sb.from(table).select('id', { count: 'exact', head: true });
+      if (res.error && /does not exist|schema cache/i.test(res.error.message)) {
+        card('fail', 'Table <code>' + table + '</code> not found', 'The database schema has not been created yet.',
+          res.error.message,
+          'In Supabase &rarr; <b>SQL Editor</b> &rarr; New query, paste all of <code>sql/schema.sql</code> from the repo and click Run. This is the most common reason enquiries never appear.');
+      } else if (res.error) {
+        // A permissions error here is EXPECTED for the anon key — RLS blocks reads.
+        card('pass', 'Table <code>' + table + '</code> exists',
+          'Reads are blocked for the public key, which is correct — only signed-in admins can read.');
+      } else {
+        card('pass', 'Table <code>' + table + '</code> exists', 'Rows: ' + (res.count === null ? 'visible to admin only' : res.count));
+      }
+    }
+
+    // 4. The real test: can an anonymous visitor insert a student row?
+    var stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
+    var row = {
+      parent_name: 'SELF-CHECK ' + stamp,
+      student_name: 'SELF-CHECK (safe to delete)',
+      phone: '0000000000',
+      email: null, dob: null, school: null,
+      locality: 'Self-check', area: 'Self-check',
+      student_class: null, board: null,
+      subjects: 'Maths', preferred_days: null, preferred_timing: null,
+      mode: null, special_requirements: 'Row created by admin/diagnose.html',
+      status: 'new'
+    };
+
+    var ins = await sb.from('students').insert(row);
+    if (!ins.error) {
+      card('pass', 'A visitor CAN save an enquiry',
+        'A test row was written to the Students table. Open <a href="students.html">Students</a> — you should see a row named <code>SELF-CHECK</code>. Delete it once you have confirmed.');
+    } else {
+      var m = ins.error.message || '';
+      var fix;
+      if (/schema cache|column/i.test(m)) {
+        fix = 'A column in the form does not exist in the table. Re-run <code>sql/schema.sql</code>, and make sure <code>find-a-tutor.html</code> is the updated version (it must write <code>special_requirements</code>, not <code>notes</code>).';
+      } else if (/row-level security|policy|permission/i.test(m)) {
+        fix = 'Row Level Security is blocking public inserts. Re-run the policy section of <code>sql/schema.sql</code> — specifically <code>public_insert_students</code> and <code>public_insert_teachers</code>.';
+      } else if (/JWT|apikey|Invalid API key/i.test(m)) {
+        fix = 'The anon key in <code>admin/assets/config.js</code> is wrong or expired. Copy a fresh one from Supabase &rarr; Project Settings &rarr; API, and paste the same value into the two form pages.';
+      } else if (/fetch|network/i.test(m)) {
+        fix = 'The Supabase project URL is unreachable. Check the project is not paused (free projects pause after ~1 week of no traffic) at <a href="https://supabase.com/dashboard" target="_blank" rel="noopener">supabase.com/dashboard</a>.';
+      } else {
+        fix = 'Copy the error above and check it against your Supabase project settings.';
+      }
+      card('fail', 'A visitor CANNOT save an enquiry', 'This is why nothing reaches the admin panel:', m, fix);
+    }
+
+    // 5. Same test for the teachers table.
+    var insT = await sb.from('teachers').insert({
+      full_name: 'SELF-CHECK ' + stamp, phone: '0000000000',
+      locality: 'Self-check', status: 'new',
+      notes: 'Row created by admin/diagnose.html — safe to delete'
+    });
+    if (!insT.error) {
+      card('pass', 'A tutor CAN submit a registration',
+        'A test row was written to the Teachers table. Delete it from <a href="teachers.html">Teachers</a> once confirmed.');
+    } else {
+      card('fail', 'A tutor CANNOT submit a registration', 'Become-a-Tutor submissions are failing:', insT.error.message,
+        'Usually the same root cause as the Students failure above — fix that first, then re-run this check.');
+    }
+
+    // 6. Sanity note on which columns the forms use.
+    card('warn', 'Columns the public forms write to',
+      'If you ever rename a column in Supabase, update these lists in the form pages too.',
+      'students: ' + STUDENT_COLS.join(', ') + '\n\nteachers: ' + TEACHER_COLS.join(', '));
+
+    btn.disabled = false;
+    btn.textContent = 'Run the check again';
+  });
+})();
+</script>
+</body>
+</html>
