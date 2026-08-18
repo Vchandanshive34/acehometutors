@@ -727,13 +727,22 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   let sb = null;
-  try {
-    sb = window.supabase.createClient(
-      "https://ugpnaobvrzyefokhomvk.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVncG5hb2J2cnp5ZWZva2hvbXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTUxMzMsImV4cCI6MjEwMjUzMTEzM30.aTxhqmZffcRM2eezd5pcvjdAR77n-tFEnf35MGOARmc"
-    );
-  } catch (err) {
-    console.error('Supabase initialization error:', err);
+  let sbReady = false;
+
+  // Initialize Supabase and log status
+  if (window.supabase) {
+    try {
+      sb = window.supabase.createClient(
+        "https://ugpnaobvrzyefokhomvk.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVncG5hb2J2cnp5ZWZva2hvbXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTUxMzMsImV4cCI6MjEwMjUzMTEzM30.aTxhqmZffcRM2eezd5pcvjdAR77n-tFEnf35MGOARmc"
+      );
+      sbReady = true;
+      console.log('✓ Supabase client initialized successfully');
+    } catch (err) {
+      console.error('✗ Supabase init error:', err);
+    }
+  } else {
+    console.error('✗ Supabase library failed to load from CDN');
   }
 
   document.querySelectorAll('form.aht-form').forEach(function (f) {
@@ -745,55 +754,73 @@
       var btnLabel = btn ? btn.textContent : '';
       if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
 
+      console.log('Form submission started...');
+
       const fd = new FormData(f);
       const subjects = fd.getAll('subjects').join(', ');
       let dbInsertSuccess = false;
       let dbError = null;
 
+      // Log form data for debugging
+      const submitData = {
+        parent_name: fd.get('parent_name'),
+        student_name: fd.get('student_name'),
+        phone: fd.get('phone'),
+        email: fd.get('email'),
+        locality: fd.get('locality'),
+        area: fd.get('area'),
+        student_class: fd.get('class'),
+        board: fd.get('board'),
+        subjects: subjects,
+        preferred_days: fd.get('days'),
+        preferred_timing: fd.get('timing'),
+        mode: fd.get('mode'),
+        notes: fd.get('notes'),
+        status: 'new'
+      };
+      console.log('Data to insert:', submitData);
+
       // Step 1: Insert into Supabase (for admin dashboard)
-      if (sb) {
+      if (sb && sbReady) {
         try {
-          const { error } = await sb.from('students').insert({
-            parent_name: fd.get('parent_name'),
-            student_name: fd.get('student_name'),
-            phone: fd.get('phone'),
-            email: fd.get('email'),
-            locality: fd.get('locality'),
-            area: fd.get('area'),
-            student_class: fd.get('class'),
-            board: fd.get('board'),
-            subjects: subjects,
-            preferred_days: fd.get('days'),
-            preferred_timing: fd.get('timing'),
-            mode: fd.get('mode'),
-            notes: fd.get('notes'),
-            status: 'new'
-          });
+          console.log('Inserting into Supabase students table...');
+          const { data, error } = await sb.from('students').insert([submitData]);
+
           if (error) {
-            dbError = error.message;
-            console.error('Supabase insert error:', dbError);
+            dbError = error.message || JSON.stringify(error);
+            console.error('✗ Supabase insert failed:', error);
+            console.error('Error details:', {
+              message: error.message,
+              code: error.code,
+              status: error.status,
+              details: error.details
+            });
           } else {
             dbInsertSuccess = true;
+            console.log('✓ Supabase insert successful:', data);
           }
         } catch (err) {
-          dbError = err.message;
-          console.error('Supabase exception:', err);
+          dbError = err.message || String(err);
+          console.error('✗ Supabase exception:', err);
         }
       } else {
-        dbError = 'Supabase client not initialized';
-        console.error(dbError);
+        dbError = 'Supabase not available - library may not have loaded';
+        console.error('✗', dbError);
       }
 
       // Step 2: Send email via Formspree (for notifications)
+      console.log('Sending email via Formspree...');
       fetch('https://formspree.io/f/xyegneow', {
         method: 'POST',
         body: fd,
         headers: { 'Accept': 'application/json' }
       }).then(function (res) {
         if (res.ok) {
+          console.log('✓ Formspree email sent successfully');
           // Both operations complete
           if (area && ok) { area.hidden = true; ok.hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' }); }
         } else {
+          console.warn('⚠ Formspree returned non-ok status:', res.status);
           res.json().then(function (data) {
             var msg = (data && data.errors) ? data.errors.map(function (er) { return er.message; }).join(', ') : 'Email notification failed, but your request was saved.';
             alert(msg);
@@ -805,12 +832,19 @@
             btn.disabled = false; btn.textContent = btnLabel;
           }
         }
-      }).catch(function () {
-        alert('Network error — please check your connection and try again.');
+      }).catch(function (err) {
+        console.error('✗ Fetch error:', err);
+        var msg = dbError ? ('Database error: ' + dbError + '\n\nNetwork error: ' + err.message) : 'Network error — please check your connection and try again.';
+        alert(msg);
         if (btn) { btn.disabled = false; btn.textContent = btnLabel; }
       });
     });
   });
+
+  // Also log to console on page load
+  console.log('=== Ace Home Tutors Form Debug ===');
+  console.log('Supabase ready:', sbReady);
+  console.log('Check browser console for submission logs');
 </script>
 
 </body>
