@@ -718,3 +718,36 @@
   });
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function () {
+  var ACE_DB = window.supabase.createClient(
+    "https://ugpnaobvrzyefokhomvk.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVncG5hb2J2cnp5ZWZva2hvbXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTUxMzMsImV4cCI6MjEwMjUzMTEzM30.aTxhqmZffcRM2eezd5pcvjdAR77n-tFEnf35MGOARmc"   // same key as admin/assets/config.js
+  );
+  var form = document.querySelector('form.aht-form');
+  if (!form) return;
+  form.addEventListener('submit', function () {
+    var fd = new FormData(form);
+    ACE_DB.from('students').insert({
+      parent_name: fd.get('parent_name') || null,
+      student_name: fd.get('student_name') || null,
+      phone: fd.get('phone') || null,
+      email: fd.get('email') || null,
+      dob: fd.get('dob') || null,
+      school: fd.get('school') || null,
+      locality: fd.get('locality') || null,
+      area: fd.get('area') || null,
+      student_class: fd.get('class') || null,
+      board: fd.get('board') || null,
+      subjects: fd.getAll('subjects').join(', ') || null,
+      preferred_days: fd.get('days') || null,
+      preferred_timing: fd.get('timing') || null,
+      mode: fd.get('mode') || null,
+      special_requirements: fd.get('notes') || null
+    }).then(function (res) {
+      if (res.error) console.error('Ace DB insert (student) failed:', res.error.message);
+    });
+  });
+})();
+</script>
