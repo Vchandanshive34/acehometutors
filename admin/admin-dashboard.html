@@ -11,23 +11,142 @@
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: #f5f5f5;
+      background: #ffffff;
       color: #333;
+      display: flex;
     }
 
-    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      width: 280px;
+      background: #1a1a1a;
+      color: white;
+      padding: 30px 0;
+      position: fixed;
+      left: 0;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .sidebar-header {
+      padding: 0 20px 30px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 30px;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 18px;
+      font-weight: 800;
+      color: white;
+      text-decoration: none;
+    }
+
+    .sidebar-logo-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0099FF, #0A6FC2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 18px;
+      color: white;
+    }
+
+    .sidebar-section {
+      margin-bottom: 40px;
+    }
+
+    .sidebar-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255, 255, 255, 0.5);
+      padding: 0 20px;
+      margin-bottom: 15px;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .sidebar-menu li { margin: 0; }
+
+    .sidebar-menu a {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      color: rgba(255, 255, 255, 0.7);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .sidebar-menu a:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .sidebar-menu a.active {
+      background: rgba(0, 153, 255, 0.2);
+      color: #33ADFF;
+      border-right: 3px solid #0099FF;
+    }
+
+    .badge-count {
+      background: #FF3210;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      min-width: 22px;
+      text-align: center;
+    }
+
+    .badge-count.primary { background: #0099FF; }
+    .badge-count.warning { background: #FF3210; }
+
+    /* ===== MAIN CONTENT ===== */
+    .main {
+      margin-left: 280px;
+      flex: 1;
+      padding: 40px;
+      background: #ffffff;
+      min-height: 100vh;
+    }
 
     header {
-      background: linear-gradient(135deg, #0099FF 0%, #0A6FC2 100%);
-      color: white;
-      padding: 30px 20px;
-      border-radius: 12px;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 12px rgba(0, 153, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 40px;
+      padding: 0;
     }
 
-    header h1 { margin: 0; font-size: 28px; font-weight: 800; }
-    header p { margin: 8px 0 0; opacity: 0.9; font-size: 16px; }
+    header h1 {
+      margin: 0;
+      font-size: 32px;
+      font-weight: 800;
+      color: #1f2937;
+    }
+
+    header p {
+      margin: 4px 0 0;
+      color: #6b7280;
+      font-size: 14px;
+    }
 
     .stats {
       display: grid;
@@ -78,6 +197,7 @@
       border: 1.5px solid #ddd;
       border-radius: 8px;
       font-size: 14px;
+      background: white;
     }
 
     .search-box:focus {
@@ -262,6 +382,8 @@
     }
 
     @media (max-width: 768px) {
+      .sidebar { width: 200px; }
+      .main { margin-left: 200px; }
       .controls { flex-direction: column; }
       .search-box { min-width: 100%; }
       th, td { padding: 12px 8px; font-size: 13px; }
@@ -271,35 +393,57 @@
 </head>
 <body>
 
-<div class="container">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-header">
+    <a class="sidebar-logo" href="#">
+      <div class="sidebar-logo-icon">🎓</div>
+      <span>Ace Admin</span>
+    </a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Operations</div>
+    <ul class="sidebar-menu">
+      <li><a class="active" href="#">📊 Dashboard</a></li>
+      <li><a href="#">📅 Schedule</a></li>
+    </ul>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Records</div>
+    <ul class="sidebar-menu">
+      <li><a href="#">👥 Inquiries <span class="badge-count warning" id="inquiry-badge">0</span></a></li>
+      <li><a href="#">✅ Matched <span class="badge-count primary" id="matched-badge">0</span></a></li>
+    </ul>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
   <header>
-    <h1>📊 Ace Home Tutors Admin</h1>
-    <p>Manage student inquiries and track registrations</p>
+    <div class="header-left">
+      <h1>Dashboard</h1>
+      <p>Overview of registrations and upcoming sessions.</p>
+    </div>
+    <div class="header-right">
+      <button class="refresh-btn" id="refresh">↻ Refresh</button>
+    </div>
   </header>
 
   <div id="message"></div>
 
   <div class="stats" id="stats">
-    <div class="stat-card">
-      <div class="stat-number">—</div>
-      <div class="stat-label">Total Inquiries</div>
-    </div>
-    <div class="stat-card new">
-      <div class="stat-number">—</div>
-      <div class="stat-label">New (Uncontacted)</div>
-    </div>
-    <div class="stat-card active">
-      <div class="stat-number">—</div>
-      <div class="stat-label">Active/Matched</div>
-    </div>
+    <div class="stat-card"><div class="stat-number">—</div><div class="stat-label">Total Inquiries</div></div>
+    <div class="stat-card new"><div class="stat-number">—</div><div class="stat-label">New (Uncontacted)</div></div>
+    <div class="stat-card active"><div class="stat-number">—</div><div class="stat-label">Active/Matched</div></div>
   </div>
 
   <div class="controls">
     <input type="text" class="search-box" id="search" placeholder="🔍 Search by parent name, student name, phone...">
-    <button class="filter-btn" id="filter-all">All</button>
+    <button class="filter-btn active" id="filter-all">All</button>
     <button class="filter-btn" id="filter-new">New</button>
     <button class="filter-btn" id="filter-active">Active</button>
-    <button class="refresh-btn" id="refresh">↻ Refresh</button>
   </div>
 
   <div class="table-wrap">
@@ -358,26 +502,31 @@
   // ========== LOAD DATA ==========
   async function loadInquiries() {
     try {
+      console.log('📊 [DASHBOARD] Loading inquiries from Supabase...');
       const { data, error } = await sb
         .from('students')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        showError('Error loading inquiries: ' + error.message);
-        console.error(error);
+        const errorMsg = error.message || (error.error_description ? error.error_description : JSON.stringify(error));
+        showError('❌ Error loading inquiries: ' + errorMsg);
+        console.error('❌ [DASHBOARD] Error:', errorMsg);
+        console.error('Full error object:', error);
         return;
       }
 
       allInquiries = data || [];
-      console.log(`✓ Loaded ${allInquiries.length} inquiries`);
+      console.log(`✅ [DASHBOARD] Loaded ${allInquiries.length} inquiries`);
       updateStats();
       filterInquiries();
       updateTimestamp();
-      showSuccess(`✓ Loaded ${allInquiries.length} inquiries`);
+      showSuccess(`✅ Loaded ${allInquiries.length} inquiries`);
     } catch (err) {
-      showError('Unexpected error: ' + err.message);
-      console.error(err);
+      const errorMsg = err.message || (err.toString ? err.toString() : 'Unknown error');
+      showError('❌ Unexpected error: ' + errorMsg);
+      console.error('❌ [DASHBOARD] Exception:', errorMsg);
+      console.error('Full exception:', err);
     }
   }
 
@@ -401,6 +550,9 @@
         <div class="stat-label">Active/Matched</div>
       </div>
     `;
+
+    document.getElementById('inquiry-badge').textContent = newCount;
+    document.getElementById('matched-badge').textContent = activeCount;
   }
 
   // ========== FILTER ==========
@@ -465,23 +617,37 @@
   // ========== ACTIONS ==========
   async function markContacted(id) {
     try {
+      console.log('🔄 [ACTION] Marking as contacted:', id);
       const { error } = await sb.from('students').update({ status: 'active' }).eq('id', id);
-      if (error) throw error;
+      if (error) {
+        const errorMsg = error.message || JSON.stringify(error);
+        throw new Error(errorMsg);
+      }
       await loadInquiries();
+      console.log('✅ [ACTION] Marked as contacted successfully');
       showSuccess('✓ Marked as contacted');
     } catch (err) {
-      showError('Error updating status: ' + err.message);
+      const errorMsg = err.message || (err.toString ? err.toString() : 'Unknown error');
+      console.error('❌ [ACTION] Error:', errorMsg);
+      showError('Error updating status: ' + errorMsg);
     }
   }
 
   async function markClosed(id) {
     try {
+      console.log('🔄 [ACTION] Marking as closed:', id);
       const { error } = await sb.from('students').update({ status: 'closed' }).eq('id', id);
-      if (error) throw error;
+      if (error) {
+        const errorMsg = error.message || JSON.stringify(error);
+        throw new Error(errorMsg);
+      }
       await loadInquiries();
+      console.log('✅ [ACTION] Marked as closed successfully');
       showSuccess('✓ Marked as closed');
     } catch (err) {
-      showError('Error updating status: ' + err.message);
+      const errorMsg = err.message || (err.toString ? err.toString() : 'Unknown error');
+      console.error('❌ [ACTION] Error:', errorMsg);
+      showError('Error updating status: ' + errorMsg);
     }
   }
 
