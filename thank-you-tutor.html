@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Application Received — Ace Home Tutors</title>
+<meta name="robots" content="noindex, nofollow">
+<!-- FAVICON -->
+<link rel="icon" type="image/png" href="assets/ace-logo-icon.png" sizes="512x512">
+<link rel="shortcut icon" href="assets/ace-logo-icon.png">
+<link rel="apple-touch-icon" href="assets/ace-logo-icon.png">
+<style>
+  :root {
+    --blue:       #0099FF;
+    --blue-deep:  #0A6FC2;
+    --flame:      #FF3210;
+    --good:       #12885A;
+    --good-bg:    #E4F4EC;
+    --paper:      #FBFAF4;
+    --surface:    #FFFFFF;
+    --ink:        #0C1524;
+    --ink-soft:   #46536B;
+    --line:       #E7E3D5;
+    --line-soft:  #F0ECDE;
+    --shadow-md: 0 10px 26px rgba(12,21,36,.10), 0 2px 6px rgba(12,21,36,.06);
+    --font-display: "Aptos Display", "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-body:    "Aptos", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --r-lg: 26px;
+    --r-md: 18px;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 800; line-height: 1.08; margin: 0; letter-spacing: -.02em; }
+  p { margin: 0; }
+  a { color: var(--blue-deep); text-decoration: none; }
+  ::selection { background: #FBFF64; }
+
+  .wrap { width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 20px; }
+
+  /* Header */
+  header.site {
+    background: color-mix(in srgb, var(--paper) 86%, transparent);
+    backdrop-filter: saturate(1.3) blur(12px);
+    border-bottom: 1px solid var(--line-soft);
+    padding: 0.8rem 0;
+  }
+  .nav { display: flex; align-items: center; height: 66px; }
+  .nav .brand-lockup { display: inline-flex; align-items: center; gap: .6rem; }
+  .nav .tile { width: 38px; height: 38px; background: var(--blue); display: grid; place-items: center; border-radius: 24%; }
+  .nav .tile img { width: 24px; height: 24px; }
+  .nav .brand-word { font-size: 1.16rem; font-family: var(--font-display); font-weight: 800; }
+  .nav .brand-word .ace { color: var(--flame); }
+  .nav .brand-word .ht { color: var(--ink); font-weight: 700; }
+
+  /* Content */
+  .container { max-width: 800px; margin: 0 auto; padding: 4rem 20px; text-align: center; }
+
+  .success-icon {
+    width: 100px; height: 100px; margin: 0 auto 2rem;
+    background: linear-gradient(135deg, var(--good) 0%, #0d6f47 100%);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 50px; box-shadow: 0 10px 26px rgba(18, 136, 90, .2);
+  }
+
+  h1 { font-size: 2.5rem; color: var(--good); margin: 0 0 1rem; }
+  .subtitle { font-size: 1.2rem; color: var(--ink-soft); margin-bottom: 2rem; max-width: 56ch; margin-left: auto; margin-right: auto; }
+
+  .message-box {
+    background: var(--surface); padding: 2rem; border-radius: var(--r-lg);
+    box-shadow: var(--shadow-md); margin-bottom: 2rem; text-align: left;
+  }
+  .message-box h3 { font-size: 1.3rem; color: var(--blue-deep); margin: 0 0 1rem; }
+  .message-box ul { margin: 1rem 0; padding-left: 20px; }
+  .message-box li { margin-bottom: .8rem; color: var(--ink-soft); }
+  .message-box p { color: var(--ink-soft); margin-bottom: 0.5rem; }
+
+  .contact-info { font-size: .95rem; }
+  .contact-info strong { color: var(--ink); }
+  .contact-info a { font-weight: 600; }
+
+  .cta-buttons { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin: 2rem 0; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-body); font-weight: 700; font-size: 1rem;
+    padding: .85rem 1.4rem; border-radius: 999px; border: 2px solid;
+    cursor: pointer; transition: transform .2s, box-shadow .22s ease;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: var(--flame); color: #fff;
+    border-color: var(--flame);
+    box-shadow: 0 12px 26px rgba(255, 50, 16, .3);
+  }
+  .btn-primary:hover { transform: translateY(-2px); }
+  .btn-secondary {
+    background: transparent; color: var(--blue-deep);
+    border-color: var(--line);
+  }
+  .btn-secondary:hover { border-color: var(--blue); background: var(--surface); }
+
+  footer { text-align: center; padding: 2rem 20px; color: var(--ink-soft); font-size: .9rem; border-top: 1px solid var(--line); margin-top: 3rem; }
+
+  @media (max-width: 640px) {
+    h1 { font-size: 1.8rem; }
+    .subtitle { font-size: 1rem; }
+    .success-icon { width: 80px; height: 80px; font-size: 40px; }
+    .cta-buttons { flex-direction: column; }
+    .btn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <nav class="nav">
+      <div class="brand-lockup">
+        <div class="tile">
+          <img src="assets/ace-logo-icon.png" alt="Ace Logo">
+        </div>
+        <div class="brand-word"><span class="ace">Ace</span><span class="ht">HT</span></div>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+  <div class="success-icon">✓</div>
+  <h1>Application Received!</h1>
+  <p class="subtitle">Thank you for your interest in joining Ace Home Tutors</p>
+
+  <div class="message-box">
+    <h3>What happens next?</h3>
+    <ul>
+      <li><strong>Verification (24 hours):</strong> Our team reviews your qualifications</li>
+      <li><strong>Background check:</strong> Thorough verification for tutor & student safety</li>
+      <li><strong>Onboarding call:</strong> We discuss your teaching style and preferences</li>
+      <li><strong>Profile activation:</strong> Once approved, your profile goes live</li>
+    </ul>
+  </div>
+
+  <div class="message-box">
+    <h3>📞 Get in Touch</h3>
+    <p>Have questions before we contact you?</p>
+    <div class="contact-info">
+      <p><strong>WhatsApp:</strong> <a href="https://wa.me/918356056456">Message the Ace Team (Fastest)</a></p>
+      <p><strong>Phone:</strong> +91 8356 056 456<br>(Monday–Sunday, 10 AM–8 PM)</p>
+      <p><strong>Email:</strong> <a href="mailto:support@acehometutors.com">support@acehometutors.com</a></p>
+    </div>
+  </div>
+
+  <div class="cta-buttons">
+    <a href="index.html" class="btn btn-primary">Back to Home</a>
+    <a href="https://wa.me/918356056456" class="btn btn-secondary">Message on WhatsApp</a>
+  </div>
+</div>
+
+<footer>
+  <p>© 2024 Ace Home Tutors. Transforming education in Navi Mumbai.</p>
+</footer>
+
+</body>
+</html>
