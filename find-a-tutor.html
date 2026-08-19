@@ -727,151 +727,185 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   let sb = null;
+  let supabaseReady = false;
 
-  // Wait for Supabase library to load, then initialize
-  function initSupabase() {
-    if (window.supabase) {
-      try {
-        sb = window.supabase.createClient(
-          "https://ugpnaobvrzyefokhomvk.supabase.co",
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVncG5hb2J2cnp5ZWZva2hvbXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTUxMzMsImV4cCI6MjEwMjUzMTEzM30.aTxhqmZffcRM2eezd5pcvjdAR77n-tFEnf35MGOARmc"
-        );
-        console.log('✓ Supabase initialized');
-        return true;
-      } catch (err) {
-        console.error('✗ Supabase init failed:', err);
-        return false;
+  // Improved Supabase initialization with better error handling
+  async function initSupabase() {
+    const maxAttempts = 30;
+    let attempts = 0;
+
+    return new Promise(function (resolve) {
+      function tryInit() {
+        attempts++;
+        if (window.supabase && window.supabase.createClient) {
+          try {
+            sb = window.supabase.createClient(
+              "https://ugpnaobvrzyefokhomvk.supabase.co",
+              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVncG5hb2J2cnp5ZWZva2hvbXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTUxMzMsImV4cCI6MjEwMjUzMTEzM30.aTxhqmZffcRM2eezd5pcvjdAR77n-tFEnf35MGOARmc"
+            );
+            supabaseReady = true;
+            console.log('✅ [INIT] Supabase client initialized successfully');
+            resolve(true);
+          } catch (err) {
+            console.error('❌ [INIT] Failed to create Supabase client:', err);
+            resolve(false);
+          }
+        } else if (attempts < maxAttempts) {
+          setTimeout(tryInit, 200);
+        } else {
+          console.error('❌ [INIT] Supabase library failed to load after ' + attempts + ' attempts');
+          resolve(false);
+        }
       }
-    } else {
-      console.warn('⏳ Supabase library not loaded yet...');
-      setTimeout(initSupabase, 500);
-      return false;
-    }
+      tryInit();
+    });
   }
 
-  // Try to initialize immediately, or wait
-  initSupabase();
+  // Initialize Supabase when page loads
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSupabase);
+  } else {
+    initSupabase();
+  }
 
-  // Form submission handler
-  document.querySelectorAll('form.aht-form').forEach(function (f) {
-    f.addEventListener('submit', async function (e) {
-      e.preventDefault();
+  // Attach form handlers after a brief delay to ensure Supabase is ready
+  setTimeout(function () {
+    document.querySelectorAll('form.aht-form').forEach(function (f) {
+      f.addEventListener('submit', async function (e) {
+        e.preventDefault();
 
-      const area = document.getElementById('formArea');
-      const ok = document.getElementById('successPanel');
-      const btn = f.querySelector('button[type=submit], .btn-primary');
-      const btnLabel = btn ? btn.textContent : '';
+        const area = document.getElementById('formArea');
+        const ok = document.getElementById('successPanel');
+        const btn = f.querySelector('button[type=submit], .btn-primary');
+        const btnLabel = btn ? btn.textContent : '';
 
-      if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
-
-      try {
-        // Collect form data
-        const formData = new FormData(f);
-        const subjects = formData.getAll('subjects').join(', ');
-
-        const payload = {
-          parent_name: formData.get('parent_name') || '',
-          student_name: formData.get('student_name') || '',
-          phone: formData.get('phone') || '',
-          email: formData.get('email') || '',
-          locality: formData.get('locality') || '',
-          area: formData.get('area') || '',
-          student_class: formData.get('class') || '',
-          board: formData.get('board') || '',
-          subjects: subjects || '',
-          preferred_days: formData.get('days') || '',
-          preferred_timing: formData.get('timing') || '',
-          mode: formData.get('mode') || '',
-          special_requirements: formData.get('notes') || '',
-          status: 'new'
-        };
-
-        console.log('📝 Submission data:', payload);
-
-        let supabaseSuccess = false;
-        let supabaseError = null;
-
-        // Try Supabase insert
-        if (sb) {
-          try {
-            console.log('🔄 Sending to Supabase...');
-            const { data, error } = await sb.from('students').insert([payload]);
-
-            if (error) {
-              supabaseError = error.message || JSON.stringify(error);
-              console.error('❌ Supabase error:', error);
-            } else {
-              supabaseSuccess = true;
-              console.log('✅ Supabase success:', data);
-            }
-          } catch (err) {
-            supabaseError = err.message || String(err);
-            console.error('❌ Supabase exception:', err);
-          }
-        } else {
-          supabaseError = 'Supabase not initialized';
-          console.error('❌ Supabase not available');
-        }
-
-        // Try Formspree email
-        console.log('🔄 Sending email via Formspree...');
-        fetch('https://formspree.io/f/xyegneow', {
-          method: 'POST',
-          body: formData,
-          headers: { 'Accept': 'application/json' }
-        }).then(function (res) {
-          if (res.ok) {
-            console.log('✅ Formspree email sent');
-          } else {
-            console.warn('⚠️ Formspree returned status:', res.status);
-          }
-
-          // Show success if Supabase worked (that's what powers the dashboard)
-          if (supabaseSuccess) {
-            console.log('🎉 Inquiry saved to dashboard - success!');
-            if (area && ok) {
-              area.hidden = true;
-              ok.hidden = false;
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-          } else if (supabaseError) {
-            // Show error if Supabase failed
-            alert('❌ Error: ' + supabaseError + '\n\nPlease try again or contact us at +91 8356 056 456');
-            if (btn) {
-              btn.disabled = false;
-              btn.textContent = btnLabel;
-            }
-          }
-        }).catch(function (err) {
-          console.error('❌ Fetch error:', err);
-          if (supabaseSuccess) {
-            // If Supabase worked, show success despite network error
-            if (area && ok) {
-              area.hidden = true;
-              ok.hidden = false;
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-          } else {
-            alert('❌ Network error: ' + err.message);
-            if (btn) {
-              btn.disabled = false;
-              btn.textContent = btnLabel;
-            }
-          }
-        });
-
-      } catch (err) {
-        console.error('❌ Unexpected error:', err);
-        alert('❌ Unexpected error: ' + err.message);
         if (btn) {
-          btn.disabled = false;
-          btn.textContent = btnLabel;
+          btn.disabled = true;
+          btn.textContent = 'Submitting…';
         }
-      }
-    });
-  });
 
-  console.log('📋 Form handler attached');
+        try {
+          // Collect form data
+          const formData = new FormData(f);
+          const subjects = formData.getAll('subjects').join(', ');
+
+          const payload = {
+            parent_name: formData.get('parent_name') || '',
+            student_name: formData.get('student_name') || '',
+            phone: formData.get('phone') || '',
+            email: formData.get('email') || '',
+            locality: formData.get('locality') || '',
+            area: formData.get('area') || '',
+            student_class: formData.get('class') || '',
+            board: formData.get('board') || '',
+            subjects: subjects || '',
+            preferred_days: formData.get('days') || '',
+            preferred_timing: formData.get('timing') || '',
+            mode: formData.get('mode') || '',
+            special_requirements: formData.get('notes') || '',
+            status: 'new'
+          };
+
+          console.log('📋 [SUBMIT] Form submitted');
+          console.log('📝 [PAYLOAD] Inquiry data:', JSON.stringify(payload, null, 2));
+
+          let supabaseSuccess = false;
+          let supabaseError = null;
+
+          // Try Supabase insert
+          if (supabaseReady && sb) {
+            try {
+              console.log('🔄 [SUPABASE] Attempting to insert record...');
+              const { data, error } = await sb.from('students').insert([payload]);
+
+              if (error) {
+                supabaseError = error.message || JSON.stringify(error);
+                console.error('❌ [SUPABASE] Insertion failed:', error);
+                console.error('❌ [SUPABASE] Error details:', JSON.stringify(error, null, 2));
+              } else {
+                supabaseSuccess = true;
+                console.log('✅ [SUPABASE] Record inserted successfully');
+                console.log('✅ [SUPABASE] Data returned:', data);
+              }
+            } catch (err) {
+              supabaseError = err.message || String(err);
+              console.error('❌ [SUPABASE] Exception occurred:', err);
+            }
+          } else {
+            supabaseError = 'Supabase not ready. Status: ' + (sb ? 'client exists' : 'no client') + ', ready: ' + supabaseReady;
+            console.error('❌ [SUPABASE] ' + supabaseError);
+          }
+
+          // Always try Formspree email as backup
+          console.log('🔄 [EMAIL] Sending confirmation email via Formspree...');
+          fetch('https://formspree.io/f/xyegneow', {
+            method: 'POST',
+            body: formData,
+            headers: { 'Accept': 'application/json' }
+          }).then(function (res) {
+            console.log('📧 [EMAIL] Response status:', res.status);
+            if (res.ok) {
+              console.log('✅ [EMAIL] Email sent successfully');
+            } else {
+              console.warn('⚠️ [EMAIL] Email sending returned status ' + res.status);
+            }
+
+            // Show appropriate UI response
+            if (supabaseSuccess) {
+              console.log('🎉 [SUCCESS] Inquiry saved to admin dashboard!');
+              if (area && ok) {
+                area.hidden = true;
+                ok.hidden = false;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            } else if (supabaseError) {
+              console.log('❌ [ERROR] Will show error to user');
+              // Show error to user
+              var errorMsg = '❌ Failed to save inquiry.\n\n';
+              errorMsg += 'Error: ' + supabaseError + '\n\n';
+              errorMsg += 'Please try again or contact us at +91 8356 056 456\n\n';
+              errorMsg += '(Check browser console - F12 - for more details)';
+              alert(errorMsg);
+              if (btn) {
+                btn.disabled = false;
+                btn.textContent = btnLabel;
+              }
+            }
+          }).catch(function (err) {
+            console.error('❌ [EMAIL] Network error:', err);
+            if (supabaseSuccess) {
+              // If Supabase worked, still show success
+              console.log('🎉 [SUCCESS] Inquiry was saved (email sending failed but form worked)');
+              if (area && ok) {
+                area.hidden = true;
+                ok.hidden = false;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            } else {
+              var errorMsg = '❌ Network error while submitting.\n\n';
+              errorMsg += err.message + '\n\n';
+              errorMsg += 'Please check your connection and try again.';
+              alert(errorMsg);
+              if (btn) {
+                btn.disabled = false;
+                btn.textContent = btnLabel;
+              }
+            }
+          });
+
+        } catch (err) {
+          console.error('❌ [FORM] Unexpected error:', err);
+          alert('❌ Unexpected error: ' + err.message + '\n\nPlease try again or contact support at +91 8356 056 456');
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = btnLabel;
+          }
+        }
+      });
+    });
+
+    console.log('✅ [INIT] Form handlers attached successfully');
+  }, 1000);
 </script>
 
 </body>
