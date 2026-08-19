@@ -782,9 +782,8 @@
           preferred_days: formData.get('days') || '',
           preferred_timing: formData.get('timing') || '',
           mode: formData.get('mode') || '',
-          notes: formData.get('notes') || '',
-          status: 'new',
-          submitted_at: new Date().toISOString()
+          special_requirements: formData.get('notes') || '',
+          status: 'new'
         };
 
         console.log('📝 Submission data:', payload);
