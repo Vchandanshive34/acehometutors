@@ -568,7 +568,7 @@ src="https://www.facebook.com/tr?id=1038891235716693&ev=PageView&noscript=1"
 </header>
 
 <main>
-<section class="hero"><div class="wrap"><div class="success-panel reveal in" style="padding:4.5rem 0 5.5rem;"><div class="big-check"><svg viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="eyebrow" style="justify-content:center;">Request received</span><h1 style="font-size:clamp(2rem,5.5vw,3.1rem);margin-top:.6rem;">Thank you! Your request is in.</h1><p style="max-width:60ch;margin:1.2rem auto 2rem;font-size:1.1rem;">Our team will review your requirement and call or WhatsApp you within 48 hours with a shortlist of 2 to 3 verified tutors from your area. The first demo class is completely free.</p></div></div></section>
+<section class="hero"><div class="wrap"><div class="success-panel reveal in" style="padding:4.5rem 0 5.5rem;"><div class="big-check"><svg viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="eyebrow" style="justify-content:center;">Request received</span><h1 style="font-size:clamp(2rem,5.5vw,3.1rem);margin-top:.6rem;">Thank you! Your request is in.</h1><p style="max-width:60ch;margin:1.2rem auto 2rem;font-size:1.1rem;">Our team will review your requirement and call or WhatsApp you within 48 hours with a shortlist of 2 to 3 verified tutors from your area. The first demo class is completely free.</p><div class="row" style="display:flex;flex-wrap:wrap;gap:.75rem;justify-content:center;"><a class="btn btn-primary" href="https://wa.me/918356056456?text=Hi%20Ace%20Home%20Tutors%2C%20I%20just%20submitted%20a%20tutor%20request." target="_blank" rel="noopener">WhatsApp us now</a><a class="btn btn-ghost" href="index.html">Back to home</a></div></div></div></section>
 </main>
 
 <footer class="site">
@@ -649,89 +649,6 @@ src="https://www.facebook.com/tr?id=1038891235716693&ev=PageView&noscript=1"
       mm.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', function () { setOpen(false); }); });
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !mm.hidden) setOpen(false); });
     }
-  })();
-</script>
-<script>
-  (function () {
-    var form = document.querySelector('form.aht-form');
-    if (!form) return;
-var ENDPOINT = '/api/lead';
-
-    // Show the confirmation as a centered popup so it can't be missed.
-    function showSuccess(area, ok) {
-      area.hidden = true;
-      var ov = document.createElement('div');
-      ov.className = 'aht-overlay';
-      document.body.appendChild(ov);
-      ov.appendChild(ok);
-      ok.hidden = false;
-      var cx = document.createElement('button');
-      cx.type = 'button';
-      cx.className = 'aht-overlay-close';
-      cx.setAttribute('aria-label', 'Close');
-      cx.innerHTML = '&times;';
-      ok.appendChild(cx);
-      document.body.style.overflow = 'hidden';
-      var close = function () { ov.hidden = true; document.body.style.overflow = ''; };
-      cx.addEventListener('click', close);
-      ov.addEventListener('click', function (ev) { if (ev.target === ov) close(); });
-      document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') close(); });
-    }
-
-    var FORM_TYPE = form.getAttribute('data-form-type') || 'parent';
-
-    // Optional Cloudflare Turnstile — enabled only when a site key is present.
-    var siteKey = (document.querySelector('meta[name="turnstile-sitekey"]') || {}).content || '';
-    var tsId = null;
-    if (siteKey) {
-      var slot = form.querySelector('.ts-slot');
-      if (slot) {
-        window.__onTurnstileLoad = function () { tsId = window.turnstile.render(slot, { sitekey: siteKey }); };
-        var s = document.createElement('script');
-        s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=__onTurnstileLoad';
-        s.async = true; s.defer = true;
-        document.head.appendChild(s);
-      }
-    }
-
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var btn = form.querySelector('.form-submit');
-      var errBox = document.getElementById('formError');
-
-      var data = { form_type: FORM_TYPE };
-      new FormData(form).forEach(function (v, k) {
-        if (v instanceof File) return; // file uploads need R2; skipped for lead capture
-        if (data[k] === undefined) data[k] = v;
-        else if (Array.isArray(data[k])) data[k].push(v);
-        else data[k] = [data[k], v];
-      });
-      if (window.turnstile && tsId !== null) {
-        data['cf-turnstile-response'] = window.turnstile.getResponse(tsId) || '';
-      }
-
-      if (errBox) errBox.hidden = true;
-      if (btn) { btn.disabled = true; btn.dataset.label = btn.textContent; btn.textContent = 'Submitting…'; }
-
-      fetch(ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-        .then(function (r) { return r.json().catch(function () { return { ok: r.ok }; }); })
-        .then(function (res) {
-          if (!res.ok) throw new Error(res.error || 'Submission failed. Please try again.');
-          var area = document.getElementById('formArea');
-          var ok = document.getElementById('successPanel');
-          if (area && ok) { showSuccess(area, ok); }
-        })
-        .catch(function (err) {
-          if (errBox) { errBox.textContent = err.message; errBox.hidden = false; }
-          else alert(err.message);
-          if (window.turnstile && tsId !== null) window.turnstile.reset(tsId);
-          if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || 'Submit'; }
-        });
-    });
   })();
 </script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"31665ad6001f4373b01466a9ed9bccf1","r":1}' crossorigin="anonymous"></script>
