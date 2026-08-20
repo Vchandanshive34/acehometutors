@@ -665,8 +665,10 @@ src="https://www.facebook.com/tr?id=1038891235716693&ev=PageView&noscript=1"
 <script>
   /* =========================================================
      Ace Home Tutors — Parent landing page form handler
-     Saves the lead to Supabase (parent_leads) + emails via
-     Formspree, then sends the visitor to thank-you-parent.html
+     Saves the lead into the SAME "students" table that
+     find-a-tutor.html uses, so it appears in admin/students.html.
+     Also emails via Formspree, then sends the visitor to
+     thank-you-parent.html
      ========================================================= */
   (function () {
     var form = document.querySelector('form.aht-form');
@@ -675,20 +677,32 @@ src="https://www.facebook.com/tr?id=1038891235716693&ev=PageView&noscript=1"
     // ================= CONFIGURATION =================
     var SUPABASE_URL = 'https://ugpnaobvrzyefokhomvk.supabase.co';
     var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVncG5hb2J2cnp5ZWZva2hvbXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTUxMzMsImV4cCI6MjEwMjUzMTEzM30.aTxhqmZffcRM2eezd5pcvjdAR77n-tFEnf35MGOARmc';
-    var TABLE_NAME   = 'parent_leads';
+    var TABLE_NAME   = 'students';                 // <- the table admin/students.html reads
     var FORMSPREE_ID = 'xyegneow';                 // same form as find-a-tutor.html
     var THANK_YOU    = 'thank-you-parent.html';    // page shown after a successful submit
+    var LEAD_SOURCE  = 'Ad landing page';          // tag so you can spot ad leads; set to '' to disable
     var DEBUG_MODE   = true;                       // set to false once you're happy
     // ================================================
 
-    // Columns that actually exist in the parent_leads table (sql/SETUP.sql).
-    // Anything not in this list is dropped before the insert, otherwise
-    // PostgREST rejects the whole row with a "column not found" error.
-    var ALLOWED = ['form_type', 'parent_name', 'student_name', 'phone', 'email',
-                   'dob', 'school', 'locality', 'area', 'class', 'board',
-                   'subjects', 'days', 'timing', 'notes'];
-
-    var FORM_TYPE = form.getAttribute('data-form-type') || 'parent';
+    // Maps this form's field names -> the column names in the "students"
+    // table (sql/schema.sql). Anything not listed here is dropped before
+    // the insert — including the honeypot and the Turnstile token —
+    // because PostgREST rejects the whole row on an unknown column.
+    var FIELD_MAP = {
+      parent_name:  'parent_name',
+      student_name: 'student_name',
+      phone:        'phone',
+      email:        'email',
+      dob:          'dob',
+      school:       'school',
+      locality:     'locality',
+      area:         'area',
+      'class':      'student_class',
+      board:        'board',
+      days:         'preferred_days',
+      timing:       'preferred_timing',
+      notes:        'special_requirements'
+    };
 
     // Optional Cloudflare Turnstile — enabled only when a site key is present.
     var siteKey = (document.querySelector('meta[name="turnstile-sitekey"]') || {}).content || '';
@@ -731,12 +745,22 @@ src="https://www.facebook.com/tr?id=1038891235716693&ev=PageView&noscript=1"
       }
 
       // ---- Build the row ---------------------------------------------
-      var row = { form_type: FORM_TYPE, subjects: subjects.join(', ') };
+      var row = { subjects: subjects.join(', '), status: 'new' };
       fd.forEach(function (v, k) {
         if (k === 'subjects' || v instanceof File) return;
-        if (ALLOWED.indexOf(k) === -1) return;   // drops honeypot + turnstile token
-        row[k] = typeof v === 'string' ? v.trim() : v;
+        var col = FIELD_MAP[k];
+        if (!col) return;                        // drops honeypot + turnstile token
+        var val = typeof v === 'string' ? v.trim() : v;
+        if (val === '') return;                  // dob is a DATE column — never send ''
+        row[col] = val;
       });
+
+      // Tag the source so ad leads are distinguishable in admin/students.html
+      if (LEAD_SOURCE) {
+        row.special_requirements = row.special_requirements
+          ? '[' + LEAD_SOURCE + '] ' + row.special_requirements
+          : '[' + LEAD_SOURCE + ']';
+      }
 
       if (errBox) errBox.hidden = true;
       if (btn) { btn.disabled = true; btn.dataset.label = btn.dataset.label || btn.textContent; btn.textContent = 'Submitting…'; }
@@ -797,7 +821,8 @@ src="https://www.facebook.com/tr?id=1038891235716693&ev=PageView&noscript=1"
           return mailPromise.then(function (mailOk) {
             if (mailOk) {
               console.warn('⚠️ Saved by email only (database error: ' + err.message + ')');
-              window.location.href = THANK_YOU;
+              // ?saved=email marks the lead as "email only, NOT in the dashboard"
+              window.location.href = THANK_YOU + '?saved=email';
               return;
             }
             console.error('❌ Submission failed:', err);
