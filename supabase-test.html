@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Supabase connection test — Ace Home Tutors</title>
+<style>
+  :root { --ink:#12233a; --soft:#5b6b80; --line:#e3e9f0; --ok:#0f7b40; --bad:#b3261e; --warn:#8a5a00; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:2rem 1rem 4rem; font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; color:var(--ink); background:#f6f9fc; }
+  .wrap { max-width:760px; margin:0 auto; }
+  h1 { font-size:1.5rem; margin:0 0 .3rem; }
+  p.sub { color:var(--soft); margin:0 0 1.6rem; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:1.25rem 1.4rem; margin-bottom:1rem; }
+  .card h2 { font-size:1rem; margin:0 0 .8rem; letter-spacing:.02em; text-transform:uppercase; color:var(--soft); }
+  dl { display:grid; grid-template-columns:auto 1fr; gap:.35rem 1rem; margin:0; font-size:.94rem; }
+  dt { color:var(--soft); }
+  dd { margin:0; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; word-break:break-all; }
+  button { font:inherit; font-weight:600; border:0; border-radius:10px; padding:.7rem 1.3rem; background:#1560d0; color:#fff; cursor:pointer; }
+  button:disabled { opacity:.55; cursor:default; }
+  .verdict { padding:.9rem 1.1rem; border-radius:10px; margin-top:1rem; font-weight:600; display:none; }
+  .verdict.ok  { background:#e7f6ed; color:var(--ok);   display:block; }
+  .verdict.bad { background:#fdecea; color:var(--bad);  display:block; }
+  .verdict.warn{ background:#fff5e0; color:var(--warn); display:block; }
+  .verdict .fix { display:block; font-weight:400; margin-top:.5rem; color:var(--ink); }
+  pre { background:#0f1c2e; color:#d8e4f2; padding:.9rem 1rem; border-radius:10px; overflow:auto; font-size:.85rem; margin:.9rem 0 0; white-space:pre-wrap; word-break:break-all; }
+  code { background:#eef3f9; padding:.1rem .35rem; border-radius:5px; font-size:.9em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Supabase connection test</h1>
+  <p class="sub">Checks whether this website can actually write a lead into your database. Delete this file once you're happy — it is not linked from anywhere.</p>
+
+  <div class="card">
+    <h2>Settings being tested</h2>
+    <dl>
+      <dt>Project URL</dt><dd id="cfgUrl"></dd>
+      <dt>Table</dt><dd id="cfgTable"></dd>
+      <dt>Key role</dt><dd id="cfgRole"></dd>
+    </dl>
+  </div>
+
+  <div class="card">
+    <h2>Run the test</h2>
+    <p style="margin:0 0 1rem;color:var(--soft);font-size:.94rem;">
+      This inserts one clearly-labelled row named
+      <code>ZZ TEST — DELETE ME</code>. If it works, that row will appear in
+      <code>admin/students.html</code> and you can delete it from there.
+    </p>
+    <button id="run">Run connection test</button>
+    <div id="verdict" class="verdict"></div>
+    <pre id="out" hidden></pre>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  // ---- keep these identical to parentlp.html -------------------------
+  var SUPABASE_URL = 'https://ugpnaobvrzyefokhomvk.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVncG5hb2J2cnp5ZWZva2hvbXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTUxMzMsImV4cCI6MjEwMjUzMTEzM30.aTxhqmZffcRM2eezd5pcvjdAR77n-tFEnf35MGOARmc';
+  var TABLE_NAME   = 'students';
+  // --------------------------------------------------------------------
+
+  var role = 'unknown';
+  try { role = JSON.parse(atob(SUPABASE_KEY.split('.')[1])).role; } catch (e) {}
+  document.getElementById('cfgUrl').textContent   = SUPABASE_URL;
+  document.getElementById('cfgTable').textContent = TABLE_NAME;
+  document.getElementById('cfgRole').textContent  = role;
+
+  var verdict = document.getElementById('verdict');
+  var out = document.getElementById('out');
+
+  function say(kind, headline, fix) {
+    verdict.className = 'verdict ' + kind;
+    verdict.innerHTML = headline + (fix ? '<span class="fix">' + fix + '</span>' : '');
+  }
+
+  document.getElementById('run').addEventListener('click', function () {
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'Testing…';
+    verdict.className = 'verdict'; out.hidden = true;
+
+    var row = {
+      parent_name: 'ZZ TEST — DELETE ME',
+      student_name: 'ZZ TEST',
+      phone: '0000000000',
+      email: 'test@example.com',
+      locality: 'Kharghar',
+      area: 'Connection test',
+      student_class: 'Class X',
+      board: 'CBSE',
+      subjects: 'Maths',
+      special_requirements: '[Automated connection test] Safe to delete.',
+      status: 'new'
+    };
+
+    fetch(SUPABASE_URL + '/rest/v1/' + TABLE_NAME, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(row)
+    })
+    .then(function (r) {
+      return r.text().then(function (body) { return { status: r.status, body: body }; });
+    })
+    .then(function (res) {
+      out.hidden = false;
+      out.textContent = 'HTTP ' + res.status + '\n\n' + (res.body || '(empty response body — this is normal for a successful insert)');
+
+      var b = res.body || '';
+      if (res.status >= 200 && res.status < 300) {
+        say('ok', '✅ Connected. The row was saved.',
+            'Open <code>admin/students.html</code> — you should see “ZZ TEST — DELETE ME” at the top. Delete it there, then delete this test file. Your landing page will now work the same way.');
+      } else if (res.status === 404 || b.indexOf('PGRST205') > -1) {
+        say('bad', '❌ Table “' + TABLE_NAME + '” not found.',
+            'Run <code>sql/schema.sql</code> in Supabase → SQL Editor, then wait ~30 seconds and test again.');
+      } else if (res.status === 401 || res.status === 403 || b.indexOf('row-level security') > -1) {
+        say('bad', '❌ Blocked by Row Level Security.',
+            'The anon key is reaching Supabase but is not allowed to insert. In Supabase → SQL Editor run the <code>public_insert_students</code> policy from <code>sql/schema.sql</code>.');
+      } else if (b.indexOf('PGRST204') > -1 || b.indexOf('Could not find the') > -1) {
+        say('warn', '⚠️ Connected, but a column name does not match.',
+            'The table exists and the key works, but its columns differ from <code>sql/schema.sql</code>. See the exact column name in the response below.');
+      } else {
+        say('bad', '❌ Insert rejected (HTTP ' + res.status + ').', 'See the exact message below.');
+      }
+    })
+    .catch(function (err) {
+      out.hidden = false;
+      out.textContent = String(err);
+      say('bad', '❌ Could not reach Supabase at all — “' + err.message + '”.',
+          'This is a network/URL problem, not a database one. Check the Project URL above matches Supabase → Project Settings → API exactly, and that the project is not paused.');
+    })
+    .then(function () { btn.disabled = false; btn.textContent = 'Run connection test again'; });
+  });
+})();
+</script>
+</body>
+</html>
