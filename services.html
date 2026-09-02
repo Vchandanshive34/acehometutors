@@ -448,8 +448,9 @@
   @media (min-width:920px){
     .split { grid-template-columns:1.05fr .95fr; gap:3.2rem; }
     .split.flip .split-media { order:-1; }
+    .split.flip { grid-template-columns:.95fr 1.05fr; }
     .split-media { position:sticky; top:96px; }
-    .split-media img { aspect-ratio:4/5; min-height:320px; max-height:76vh; }
+    .split-media img { aspect-ratio:4/5; min-height:320px; }
     .split-copy { text-align:left; }
   }
 
