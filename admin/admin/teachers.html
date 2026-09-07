@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teachers — Ace Home Tutors Admin</title>
+<link rel="stylesheet" href="assets/css/admin.css">
+</head>
+<body>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <span class="tile"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 2 8l10 5 10-5-10-5Z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M6 10.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-5.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><path d="M22 8v6" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+      <div><b>Ace<i> Home Tutors</i></b><small>ADMIN</small></div>
+    </div>
+
+    <nav class="navlist">
+      <a class="nav-item" data-page="dashboard.html" href="dashboard.html">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="9" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="5" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="12" width="7" height="9" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="16" width="7" height="5" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" data-page="students.html" href="students.html">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M4 21c1.2-4 4-6 8-6s6.8 2 8 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Students / Parents
+      </a>
+      <a class="nav-item" data-page="teachers.html" href="teachers.html">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 9.5 12 5l9 4.5-9 4.5-9-4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7 12v4.5c0 1.1 2.24 3 5 3s5-1.9 5-3V12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Teachers
+      </a>
+      <a class="nav-item" data-page="calendar.html" href="calendar.html">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Calendar
+      </a>
+    </nav>
+
+    <div class="side-foot">
+      <span class="mail">acehometutorsadmin@gmail.com</span>
+      <button class="btn-signout" data-action="sign-out">Sign out</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h1>Teachers</h1>
+        <div class="sub">Tutor applications, availability and approval status.</div>
+      </div>
+      <div class="spacer"></div>
+      <div class="search"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Search tutors, students…</div>
+      <button class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg> New assignment</button>
+    </div>
+
+    <div class="content">
+      <div class="mtabs">
+        <button class="mtab">Dashboard</button>
+        <button class="mtab">Students / Parents</button>
+        <button class="mtab active">Teachers</button>
+        <button class="mtab">Calendar</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>All teachers</h3><span class="spacer"></span><span class="pill p-mut">0 total</span></div>
+        <div class="tbl-scroll">
+          <table class="data">
+            <thead>
+              <tr><th>Name</th><th>Subjects</th><th>Locality</th><th>Experience</th><th>Status</th><th>Registered</th><th></th></tr>
+            </thead>
+            <tbody>
+              <tr class="empty-row"><td colspan="7">No registrations yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/admin.js"></script>
+</body>
+</html>
