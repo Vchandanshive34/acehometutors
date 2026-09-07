@@ -1,108 +1,133 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow">
-<title>Dashboard — Ace Admin</title>
-<link rel="stylesheet" href="assets/admin.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — Ace Home Tutors Admin</title>
+<link rel="stylesheet" href="assets/css/admin.css">
 </head>
 <body>
 
-<div class="shell">
-  <div id="sidebar-mount"></div>
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="brand">
+      <span class="tile"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 2 8l10 5 10-5-10-5Z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M6 10.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-5.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><path d="M22 8v6" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+      <div><b>Ace<i> Home Tutors</i></b><small>ADMIN</small></div>
+    </div>
+
+    <nav class="navlist">
+      <a class="nav-item" data-page="dashboard.html" href="dashboard.html">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="9" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="5" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="12" width="7" height="9" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="16" width="7" height="5" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" data-page="students.html" href="students.html">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M4 21c1.2-4 4-6 8-6s6.8 2 8 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Students / Parents
+      </a>
+      <a class="nav-item" data-page="teachers.html" href="teachers.html">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 9.5 12 5l9 4.5-9 4.5-9-4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7 12v4.5c0 1.1 2.24 3 5 3s5-1.9 5-3V12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Teachers
+      </a>
+      <a class="nav-item" data-page="calendar.html" href="calendar.html">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Calendar
+      </a>
+    </nav>
+
+    <div class="side-foot">
+      <span class="mail">acehometutorsadmin@gmail.com</span>
+      <button class="btn-signout" data-action="sign-out">Sign out</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
   <div class="main">
-    <button class="menu-btn" id="menu-btn">&#9776;</button>
-    <div class="page-head">
+    <div class="topbar">
       <div>
         <h1>Dashboard</h1>
-        <p>Overview of registrations and upcoming sessions.</p>
+        <div class="sub">Overview of registrations and upcoming sessions.</div>
       </div>
+      <div class="spacer"></div>
+      <div class="search"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Search tutors, students…</div>
+      <button class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg> New assignment</button>
     </div>
 
-    <div class="stat-grid" id="stat-grid">
-      <div class="stat-card"><div class="num">—</div><div class="label">Loading…</div></div>
-    </div>
-
-    <div class="panel">
-      <h2>Recently registered students</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Parent</th><th>Student</th><th>Class</th><th>Locality</th><th>Status</th><th>Registered</th></tr></thead>
-          <tbody id="recent-students"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
-        </table>
+    <div class="content">
+      <div class="mtabs">
+        <button class="mtab active">Dashboard</button>
+        <button class="mtab">Students / Parents</button>
+        <button class="mtab">Teachers</button>
+        <button class="mtab">Calendar</button>
       </div>
-    </div>
 
-    <div class="panel">
-      <h2>Recently registered teachers</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Name</th><th>Subjects</th><th>Locality</th><th>Experience</th><th>Status</th><th>Registered</th></tr></thead>
-          <tbody id="recent-teachers"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
-        </table>
+      <!-- Stat tiles -->
+      <div class="tiles">
+        <div class="tile-card">
+          <div class="top"><span class="ic" style="background:var(--info-bg);color:var(--info);"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M4 21c1.2-4 4-6 8-6s6.8 2 8 6" stroke="currentColor" stroke-width="1.8"/></svg></span></div>
+          <div class="n">0</div><div class="l">Total students / parents</div>
+        </div>
+        <div class="tile-card">
+          <div class="top"><span class="ic" style="background:var(--urgent-bg);color:var(--urgent);"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3h9l4 4v14H6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v5h5" stroke="currentColor" stroke-width="1.8"/></svg></span></div>
+          <div class="n">0</div><div class="l">New, unmatched</div>
+        </div>
+        <div class="tile-card">
+          <div class="top"><span class="ic" style="background:var(--ok-bg);color:var(--ok);"><svg viewBox="0 0 24 24" fill="none"><path d="m9 14 2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/></svg></span></div>
+          <div class="n">0</div><div class="l">Active students</div>
+        </div>
+        <div class="tile-card">
+          <div class="top"><span class="ic" style="background:var(--info-bg);color:var(--info);"><svg viewBox="0 0 24 24" fill="none"><path d="M3 9.5 12 5l9 4.5-9 4.5-9-4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7 12v4.5c0 1.1 2.24 3 5 3s5-1.9 5-3V12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span></div>
+          <div class="n">0</div><div class="l">Total teachers</div>
+        </div>
+        <div class="tile-card">
+          <div class="top"><span class="ic" style="background:var(--warn-bg);color:var(--warn);"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M4 21c1.2-4 4-6 8-6s6.8 2 8 6" stroke="currentColor" stroke-width="1.8"/></svg></span></div>
+          <div class="n">0</div><div class="l">New, unverified</div>
+        </div>
+        <div class="tile-card">
+          <div class="top"><span class="ic" style="background:var(--ok-bg);color:var(--ok);"><svg viewBox="0 0 24 24" fill="none"><path d="m9 14 2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/></svg></span></div>
+          <div class="n">0</div><div class="l">Active teachers</div>
+        </div>
+        <div class="tile-card">
+          <div class="top"><span class="ic" style="background:var(--info-bg);color:var(--info);"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" stroke-width="1.8"/></svg></span></div>
+          <div class="n">0</div><div class="l">Upcoming sessions</div>
+        </div>
       </div>
+
+      <!-- Recently registered students -->
+      <div class="panel">
+        <div class="panel-head"><h3>Recently registered students</h3></div>
+        <div class="tbl-scroll">
+          <table class="data">
+            <thead>
+              <tr><th>Parent</th><th>Student</th><th>Class</th><th>Locality</th><th>Status</th><th>Registered</th></tr>
+            </thead>
+            <tbody>
+              <tr class="empty-row"><td colspan="6">No registrations yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recently registered teachers -->
+      <div class="panel">
+        <div class="panel-head"><h3>Recently registered teachers</h3></div>
+        <div class="tbl-scroll">
+          <table class="data">
+            <thead>
+              <tr><th>Name</th><th>Subjects</th><th>Locality</th><th>Experience</th><th>Status</th><th>Registered</th></tr>
+            </thead>
+            <tbody>
+              <tr class="empty-row"><td colspan="6">No registrations yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="note"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8h.01M11 12h1v4h1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Tiles and tables update automatically once students and teachers start registering through the site.</div>
     </div>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js"></script>
-<script src="assets/app.js"></script>
-<script>
-(async function init() {
-  const session = await requireAuth();
-  if (!session) return;
-  renderSidebar('dashboard.html');
-  setupMobileMenu();
-
-  const [studentsRes, teachersRes, sessionsRes] = await Promise.all([
-    sb.from('students').select('*').order('created_at', { ascending: false }),
-    sb.from('teachers').select('*').order('created_at', { ascending: false }),
-    sb.from('sessions').select('id, session_date').gte('session_date', new Date().toISOString().slice(0,10))
-  ]);
-
-  const students = studentsRes.data || [];
-  const teachers = teachersRes.data || [];
-  const upcoming = sessionsRes.data || [];
-
-  const newStudents = students.filter(s => s.status === 'new').length;
-  const activeStudents = students.filter(s => s.status === 'active').length;
-  const newTeachers = teachers.filter(t => t.status === 'new').length;
-  const activeTeachers = teachers.filter(t => t.status === 'active').length;
-
-  document.getElementById('stat-grid').innerHTML = `
-    <div class="stat-card"><div class="num gold">${students.length}</div><div class="label">Total students / parents</div></div>
-    <div class="stat-card"><div class="num">${newStudents}</div><div class="label">New, unmatched</div></div>
-    <div class="stat-card"><div class="num teal">${activeStudents}</div><div class="label">Active students</div></div>
-    <div class="stat-card"><div class="num gold">${teachers.length}</div><div class="label">Total teachers</div></div>
-    <div class="stat-card"><div class="num">${newTeachers}</div><div class="label">New, unverified</div></div>
-    <div class="stat-card"><div class="num teal">${activeTeachers}</div><div class="label">Active teachers</div></div>
-    <div class="stat-card"><div class="num">${upcoming.length}</div><div class="label">Upcoming sessions</div></div>
-  `;
-
-  const recentStudents = students.slice(0, 6);
-  document.getElementById('recent-students').innerHTML = recentStudents.length ? recentStudents.map(s => `
-    <tr>
-      <td>${escapeHtml(s.parent_name)}</td>
-      <td>${escapeHtml(s.student_name)}</td>
-      <td class="cell-muted">${escapeHtml(s.student_class || '—')}</td>
-      <td class="cell-muted">${escapeHtml(s.locality || '—')}</td>
-      <td>${badge(s.status)}</td>
-      <td class="cell-muted">${fmtDate(s.created_at)}</td>
-    </tr>`).join('') : `<tr><td colspan="6" class="empty-state">No registrations yet</td></tr>`;
-
-  const recentTeachers = teachers.slice(0, 6);
-  document.getElementById('recent-teachers').innerHTML = recentTeachers.length ? recentTeachers.map(t => `
-    <tr>
-      <td>${escapeHtml(t.full_name)}</td>
-      <td class="cell-muted">${escapeHtml(t.subjects || '—')}</td>
-      <td class="cell-muted">${escapeHtml(t.locality || '—')}</td>
-      <td class="cell-muted">${t.experience_years != null ? t.experience_years + ' yrs' : '—'}</td>
-      <td>${badge(t.status)}</td>
-      <td class="cell-muted">${fmtDate(t.created_at)}</td>
-    </tr>`).join('') : `<tr><td colspan="6" class="empty-state">No registrations yet</td></tr>`;
-})();
-</script>
+<script src="assets/js/admin.js"></script>
 </body>
 </html>
