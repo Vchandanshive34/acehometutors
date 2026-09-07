@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Teachers — Ace Admin</title>
+<link rel="stylesheet" href="assets/admin.css">
+</head>
+<body>
+
+<div class="shell">
+  <div id="sidebar-mount"></div>
+  <div class="main">
+    <div id="topbar-mount"></div>
+    <div class="content">
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Tutor applications</h2>
+          <span class="hint" id="count-hint"></span>
+          <span class="spacer"></span>
+          <button class="btn btn-primary" onclick="openAddModal()">+ Add tutor</button>
+        </div>
+
+        <div class="panel-body toolbar">
+          <input type="search" class="search-input" id="search" placeholder="Search by name, phone, subject, locality…">
+          <select id="filter-status">
+            <option value="">All statuses</option>
+            <option value="new">New</option>
+            <option value="verified">Verified</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+
+        <div class="tbl-scroll">
+          <table class="data" style="min-width:1060px">
+            <thead>
+              <tr>
+                <th>Tutor</th><th>Phone</th><th>Subjects</th><th>Classes</th>
+                <th>Experience</th><th>Status</th><th>Date</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="rows"><tr><td colspan="8" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-backdrop" id="teacher-modal">
+  <div class="modal">
+    <h3 id="modal-title">Add teacher</h3>
+    <form id="teacher-form">
+      <input type="hidden" id="t-id">
+      <div class="form-grid">
+        <div class="field"><label>Full name *</label><input type="text" id="t-name" required></div>
+        <div class="field"><label>Phone *</label><input type="tel" id="t-phone" required></div>
+        <div class="field"><label>Email</label><input type="email" id="t-email"></div>
+        <div class="field"><label>Locality</label><input type="text" id="t-locality"></div>
+        <div class="field"><label>Specific area</label><input type="text" id="t-area"></div>
+        <div class="field"><label>Experience (years)</label><input type="number" step="0.5" min="0" id="t-exp"></div>
+        <div class="field full"><label>Subjects (comma-separated)</label><input type="text" id="t-subjects" placeholder="Maths, Physics, Chemistry"></div>
+        <div class="field"><label>Classes taught</label><input type="text" id="t-classes" placeholder="Class IX-XII"></div>
+        <div class="field"><label>Boards</label><input type="text" id="t-boards" placeholder="CBSE, ICSE"></div>
+        <div class="field"><label>Qualification</label><input type="text" id="t-qual"></div>
+        <div class="field">
+          <label>Status</label>
+          <select id="t-status">
+            <option value="new">New</option><option value="verified">Verified</option>
+            <option value="active">Active</option><option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div class="field full"><label>Availability</label><input type="text" id="t-availability" placeholder="Weekday evenings, weekends"></div>
+        <div class="field full"><label>Notes</label><textarea id="t-notes" rows="2"></textarea></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('teacher-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script src="assets/app.js"></script>
+<script>
+let allTeachers = [];
+
+async function loadTeachers() {
+  const { data, error } = await sb.from('teachers').select('*').order('created_at', { ascending: false });
+  if (error) { toast('Failed to load: ' + error.message, true); return; }
+  allTeachers = data || [];
+  renderRows();
+}
+
+function renderRows() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const statusFilter = document.getElementById('filter-status').value;
+  let rows = allTeachers.filter(t => {
+    if (statusFilter && t.status !== statusFilter) return false;
+    if (!q) return true;
+    return [t.full_name, t.phone, t.subjects, t.locality, t.area]
+      .filter(Boolean).some(v => v.toLowerCase().includes(q));
+  });
+
+  const hint = document.getElementById('count-hint');
+  if (hint) hint.textContent = rows.length + ' of ' + allTeachers.length;
+
+  document.getElementById('rows').innerHTML = rows.length ? rows.map(t => `
+    <tr>
+      <td>${person(t.full_name, t.locality || '')}</td>
+      <td class="phone">${escapeHtml(t.phone)}</td>
+      <td>${subjectChips(t.subjects, 2)}</td>
+      <td class="muted">${escapeHtml(t.classes_taught || '—')}</td>
+      <td class="muted">${t.experience_years != null ? t.experience_years + ' yrs' : '—'}</td>
+      <td>${badge(t.status)}</td>
+      <td class="muted">${fmtDate(t.created_at)}</td>
+      <td class="row-actions">
+        <a class="rowbtn" href="calendar.html?teacher=${t.id}">Calendar</a>
+        <button class="rowbtn" onclick="openEditModal('${t.id}')">Edit</button>
+        <button class="rowbtn" onclick="deleteTeacher('${t.id}')">Delete</button>
+      </td>
+    </tr>`).join('') : `<tr><td colspan="8" class="empty-state"><div class="big">No tutors found</div>Try a different search, or add a new tutor.</td></tr>`;
+}
+
+document.getElementById('search').addEventListener('input', renderRows);
+document.getElementById('filter-status').addEventListener('change', renderRows);
+
+function clearForm() {
+  ['t-id','t-name','t-phone','t-email','t-locality','t-area','t-exp','t-subjects',
+   't-classes','t-boards','t-qual','t-availability','t-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('t-status').value = 'new';
+}
+
+function openAddModal() {
+  clearForm();
+  document.getElementById('modal-title').textContent = 'Add teacher';
+  openModal('teacher-modal');
+}
+
+function openEditModal(id) {
+  const t = allTeachers.find(x => x.id === id);
+  if (!t) return;
+  document.getElementById('modal-title').textContent = 'Edit teacher';
+  document.getElementById('t-id').value = t.id;
+  document.getElementById('t-name').value = t.full_name || '';
+  document.getElementById('t-phone').value = t.phone || '';
+  document.getElementById('t-email').value = t.email || '';
+  document.getElementById('t-locality').value = t.locality || '';
+  document.getElementById('t-area').value = t.area || '';
+  document.getElementById('t-exp').value = t.experience_years ?? '';
+  document.getElementById('t-subjects').value = t.subjects || '';
+  document.getElementById('t-classes').value = t.classes_taught || '';
+  document.getElementById('t-boards').value = t.boards || '';
+  document.getElementById('t-qual').value = t.qualification || '';
+  document.getElementById('t-status').value = t.status || 'new';
+  document.getElementById('t-availability').value = t.availability || '';
+  document.getElementById('t-notes').value = t.notes || '';
+  openModal('teacher-modal');
+}
+
+async function deleteTeacher(id) {
+  if (!confirm('Delete this teacher\'s record? Their scheduled sessions will be kept but unassigned. This cannot be undone.')) return;
+  const { error } = await sb.from('teachers').delete().eq('id', id);
+  if (error) { toast('Delete failed: ' + error.message, true); return; }
+  toast('Teacher deleted');
+  loadTeachers();
+}
+
+document.getElementById('teacher-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('t-id').value;
+  const payload = {
+    full_name: document.getElementById('t-name').value.trim(),
+    phone: document.getElementById('t-phone').value.trim(),
+    email: document.getElementById('t-email').value.trim() || null,
+    locality: document.getElementById('t-locality').value.trim() || null,
+    area: document.getElementById('t-area').value.trim() || null,
+    experience_years: document.getElementById('t-exp').value ? Number(document.getElementById('t-exp').value) : null,
+    subjects: document.getElementById('t-subjects').value.trim() || null,
+    classes_taught: document.getElementById('t-classes').value.trim() || null,
+    boards: document.getElementById('t-boards').value.trim() || null,
+    qualification: document.getElementById('t-qual').value.trim() || null,
+    status: document.getElementById('t-status').value,
+    availability: document.getElementById('t-availability').value.trim() || null,
+    notes: document.getElementById('t-notes').value.trim() || null,
+  };
+
+  const { error } = id
+    ? await sb.from('teachers').update(payload).eq('id', id)
+    : await sb.from('teachers').insert(payload);
+
+  if (error) { toast('Save failed: ' + error.message, true); return; }
+  toast('Saved');
+  closeModal('teacher-modal');
+  loadTeachers();
+});
+
+(async function init() {
+  const session = await requireAuth();
+  if (!session) return;
+  renderSidebar('teachers.html');
+  renderTopbar({
+    title: 'Tutors',
+    subtitle: 'Availability, contact &amp; approval',
+    search: false
+  });
+  loadTeachers();
+})();
+</script>
+</body>
+</html>

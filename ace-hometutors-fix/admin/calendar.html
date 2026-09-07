@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Calendar — Ace Admin</title>
+<link rel="stylesheet" href="assets/admin.css">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="shell">
+  <div id="sidebar-mount"></div>
+  <div class="main">
+    <div id="topbar-mount"></div>
+    <div class="content">
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Session schedule</h2>
+          <span class="spacer"></span>
+          <button class="btn btn-primary" onclick="openAddModal()">+ Add session</button>
+        </div>
+
+        <div class="panel-body toolbar">
+          <select id="filter-student"><option value="">All students</option></select>
+          <select id="filter-teacher"><option value="">All teachers</option></select>
+          <button class="rowbtn" onclick="clearFilters()">Clear filters</button>
+        </div>
+
+        <div class="panel-body" style="padding-top:0">
+          <div id="calendar"></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Session Modal -->
+<div class="modal-backdrop" id="session-modal">
+  <div class="modal">
+    <h3 id="modal-title">Add session</h3>
+    <form id="session-form">
+      <input type="hidden" id="sess-id">
+      <div class="form-grid">
+        <div class="field full">
+          <label>Student *</label>
+          <select id="sess-student" required></select>
+        </div>
+        <div class="field full">
+          <label>Teacher</label>
+          <select id="sess-teacher"><option value="">Unassigned</option></select>
+        </div>
+        <div class="field"><label>Subject</label><input type="text" id="sess-subject"></div>
+        <div class="field"><label>Date *</label><input type="date" id="sess-date" required></div>
+        <div class="field"><label>Start time</label><input type="time" id="sess-start"></div>
+        <div class="field"><label>End time</label><input type="time" id="sess-end"></div>
+        <div class="field">
+          <label>Status</label>
+          <select id="sess-status">
+            <option value="scheduled">Scheduled</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="field full"><label>Notes</label><textarea id="sess-notes" rows="2"></textarea></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger" id="sess-delete" style="display:none" onclick="deleteSession()">Delete</button>
+        <div style="flex:1"></div>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('session-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/app.js"></script>
+<script>
+let students = [];
+let teachers = [];
+let calendar;
+
+const STATUS_COLOR = { scheduled: '#0099FF', completed: '#12885A', cancelled: '#8B94A6' };
+
+function studentName(id) {
+  const s = students.find(x => x.id === id);
+  return s ? s.student_name : 'Unknown student';
+}
+function teacherName(id) {
+  const t = teachers.find(x => x.id === id);
+  return t ? t.full_name : null;
+}
+
+async function loadPeople() {
+  const [sRes, tRes] = await Promise.all([
+    sb.from('students').select('id, student_name, parent_name').order('student_name'),
+    sb.from('teachers').select('id, full_name').order('full_name'),
+  ]);
+  students = sRes.data || [];
+  teachers = tRes.data || [];
+
+  const studentSelect = document.getElementById('filter-student');
+  const sessStudent = document.getElementById('sess-student');
+  students.forEach(s => {
+    studentSelect.insertAdjacentHTML('beforeend', `<option value="${s.id}">${escapeHtml(s.student_name)} (${escapeHtml(s.parent_name)})</option>`);
+    sessStudent.insertAdjacentHTML('beforeend', `<option value="${s.id}">${escapeHtml(s.student_name)} (${escapeHtml(s.parent_name)})</option>`);
+  });
+
+  const teacherSelect = document.getElementById('filter-teacher');
+  const sessTeacher = document.getElementById('sess-teacher');
+  teachers.forEach(t => {
+    teacherSelect.insertAdjacentHTML('beforeend', `<option value="${t.id}">${escapeHtml(t.full_name)}</option>`);
+    sessTeacher.insertAdjacentHTML('beforeend', `<option value="${t.id}">${escapeHtml(t.full_name)}</option>`);
+  });
+
+  // Preselect from ?student= or ?teacher= URL param
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('student')) document.getElementById('filter-student').value = params.get('student');
+  if (params.get('teacher')) document.getElementById('filter-teacher').value = params.get('teacher');
+}
+
+async function fetchEvents(fetchInfo, successCallback, failureCallback) {
+  let query = sb.from('sessions').select('*');
+  const studentFilter = document.getElementById('filter-student').value;
+  const teacherFilter = document.getElementById('filter-teacher').value;
+  if (studentFilter) query = query.eq('student_id', studentFilter);
+  if (teacherFilter) query = query.eq('teacher_id', teacherFilter);
+
+  const { data, error } = await query;
+  if (error) { failureCallback(error); toast('Failed to load sessions: ' + error.message, true); return; }
+
+  const events = (data || []).map(sess => {
+    const tName = teacherName(sess.teacher_id);
+    const title = `${studentName(sess.student_id)}${sess.subject ? ' · ' + sess.subject : ''}${tName ? ' · ' + tName : ''}`;
+    const start = sess.start_time ? `${sess.session_date}T${sess.start_time}` : sess.session_date;
+    const end = sess.end_time ? `${sess.session_date}T${sess.end_time}` : undefined;
+    return {
+      id: sess.id,
+      title,
+      start,
+      end,
+      allDay: !sess.start_time,
+      backgroundColor: STATUS_COLOR[sess.status] || STATUS_COLOR.scheduled,
+      extendedProps: sess,
+    };
+  });
+  successCallback(events);
+}
+
+function clearFilters() {
+  document.getElementById('filter-student').value = '';
+  document.getElementById('filter-teacher').value = '';
+  calendar.refetchEvents();
+}
+document.getElementById('filter-student').addEventListener('change', () => calendar.refetchEvents());
+document.getElementById('filter-teacher').addEventListener('change', () => calendar.refetchEvents());
+
+function clearForm() {
+  document.getElementById('sess-id').value = '';
+  document.getElementById('sess-student').value = '';
+  document.getElementById('sess-teacher').value = '';
+  document.getElementById('sess-subject').value = '';
+  document.getElementById('sess-date').value = '';
+  document.getElementById('sess-start').value = '';
+  document.getElementById('sess-end').value = '';
+  document.getElementById('sess-status').value = 'scheduled';
+  document.getElementById('sess-notes').value = '';
+  document.getElementById('sess-delete').style.display = 'none';
+}
+
+function openAddModal(dateStr) {
+  clearForm();
+  document.getElementById('modal-title').textContent = 'Add session';
+  if (dateStr) document.getElementById('sess-date').value = dateStr;
+  const preStudent = document.getElementById('filter-student').value;
+  const preTeacher = document.getElementById('filter-teacher').value;
+  if (preStudent) document.getElementById('sess-student').value = preStudent;
+  if (preTeacher) document.getElementById('sess-teacher').value = preTeacher;
+  openModal('session-modal');
+}
+
+function openEditModal(sess) {
+  document.getElementById('modal-title').textContent = 'Edit session';
+  document.getElementById('sess-id').value = sess.id;
+  document.getElementById('sess-student').value = sess.student_id || '';
+  document.getElementById('sess-teacher').value = sess.teacher_id || '';
+  document.getElementById('sess-subject').value = sess.subject || '';
+  document.getElementById('sess-date').value = sess.session_date || '';
+  document.getElementById('sess-start').value = sess.start_time || '';
+  document.getElementById('sess-end').value = sess.end_time || '';
+  document.getElementById('sess-status').value = sess.status || 'scheduled';
+  document.getElementById('sess-notes').value = sess.notes || '';
+  document.getElementById('sess-delete').style.display = 'inline-flex';
+  openModal('session-modal');
+}
+
+async function deleteSession() {
+  const id = document.getElementById('sess-id').value;
+  if (!id) return;
+  if (!confirm('Delete this session? This cannot be undone.')) return;
+  const { error } = await sb.from('sessions').delete().eq('id', id);
+  if (error) { toast('Delete failed: ' + error.message, true); return; }
+  toast('Session deleted');
+  closeModal('session-modal');
+  calendar.refetchEvents();
+}
+
+document.getElementById('session-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('sess-id').value;
+  const payload = {
+    student_id: document.getElementById('sess-student').value,
+    teacher_id: document.getElementById('sess-teacher').value || null,
+    subject: document.getElementById('sess-subject').value.trim() || null,
+    session_date: document.getElementById('sess-date').value,
+    start_time: document.getElementById('sess-start').value || null,
+    end_time: document.getElementById('sess-end').value || null,
+    status: document.getElementById('sess-status').value,
+    notes: document.getElementById('sess-notes').value.trim() || null,
+  };
+  const { error } = id
+    ? await sb.from('sessions').update(payload).eq('id', id)
+    : await sb.from('sessions').insert(payload);
+
+  if (error) { toast('Save failed: ' + error.message, true); return; }
+  toast('Saved');
+  closeModal('session-modal');
+  calendar.refetchEvents();
+});
+
+(async function init() {
+  const session = await requireAuth();
+  if (!session) return;
+  renderSidebar('calendar.html');
+  renderTopbar({
+    title: 'Schedule',
+    subtitle: 'Who visits whom, and when',
+    search: false
+  });
+  await loadPeople();
+
+  const calEl = document.getElementById('calendar');
+  calendar = new FullCalendar.Calendar(calEl, {
+    initialView: window.innerWidth < 700 ? 'listWeek' : 'dayGridMonth',
+    headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listWeek' },
+    height: 'auto',
+    events: fetchEvents,
+    dateClick: (info) => openAddModal(info.dateStr),
+    eventClick: (info) => openEditModal(info.event.extendedProps),
+  });
+  calendar.render();
+})();
+</script>
+</body>
+</html>

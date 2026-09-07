@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Overview — Ace Admin</title>
+<link rel="stylesheet" href="assets/admin.css">
+</head>
+<body>
+
+<div class="shell">
+  <div id="sidebar-mount"></div>
+
+  <div class="main">
+    <div id="topbar-mount"></div>
+
+    <div class="content">
+
+      <div class="mtabs">
+        <a class="mtab active" href="dashboard.html">Overview</a>
+        <a class="mtab" href="calendar.html">Schedule</a>
+        <a class="mtab" href="students.html">Students</a>
+        <a class="mtab" href="teachers.html">Tutors</a>
+      </div>
+
+      <!-- KPI tiles -->
+      <div class="tiles" id="tiles">
+        <div class="tile-card"><div class="top"><span class="ic ic-blue"></span></div><div class="n">—</div><div class="l">Loading…</div></div>
+        <div class="tile-card"><div class="top"><span class="ic ic-warn"></span></div><div class="n">—</div><div class="l">Loading…</div></div>
+        <div class="tile-card"><div class="top"><span class="ic ic-blue"></span></div><div class="n">—</div><div class="l">Loading…</div></div>
+        <div class="tile-card"><div class="top"><span class="ic ic-ok"></span></div><div class="n">—</div><div class="l">Loading…</div></div>
+      </div>
+
+      <!-- Today's visits + Needs matching -->
+      <div class="cols two">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Today's visits</h2>
+            <span class="hint" id="today-date"></span>
+            <span class="spacer"></span>
+            <span class="pill p-info" id="today-count">0 scheduled</span>
+          </div>
+          <div class="today" id="today-list">
+            <div class="loading">Loading…</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Needs matching</h2>
+            <span class="spacer"></span>
+            <span class="pill p-urgent" id="matching-count">0 waiting</span>
+          </div>
+          <div class="today" id="matching-list">
+            <div class="loading">Loading…</div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Recent registrations -->
+      <div class="cols two">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Latest student enquiries</h2>
+            <span class="spacer"></span>
+            <a class="rowbtn" href="students.html">View all</a>
+          </div>
+          <div class="tbl-scroll">
+            <table class="data">
+              <thead><tr><th>Parent / student</th><th>Class</th><th>Locality</th><th>Status</th><th>Received</th></tr></thead>
+              <tbody id="recent-students"><tr><td colspan="5" class="loading">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Latest tutor applications</h2>
+            <span class="spacer"></span>
+            <a class="rowbtn" href="teachers.html">View all</a>
+          </div>
+          <div class="tbl-scroll">
+            <table class="data" style="min-width:420px">
+              <thead><tr><th>Tutor</th><th>Subjects</th><th>Status</th></tr></thead>
+              <tbody id="recent-teachers"><tr><td colspan="3" class="loading">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div class="note" id="footnote"></div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(async function init() {
+  const session = await requireAuth();
+  if (!session) return;
+
+  renderSidebar('dashboard.html');
+  renderTopbar({
+    title: 'Overview',
+    subtitle: todayLine('everything that needs you today'),
+    searchPlaceholder: 'Search tutors, students…',
+    action: { label: 'Add student', href: 'students.html' }
+  });
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const [studentsRes, teachersRes, sessionsRes] = await Promise.all([
+    sb.from('students').select('*').order('created_at', { ascending: false }),
+    sb.from('teachers').select('*').order('created_at', { ascending: false }),
+    sb.from('sessions').select('*').gte('session_date', today)
+  ]);
+
+  const students = studentsRes.data || [];
+  const teachers = teachersRes.data || [];
+  const sessions = (sessionsRes.data || []).filter(s => s.status !== 'cancelled');
+
+  const teacherById = {};
+  teachers.forEach(t => { teacherById[t.id] = t; });
+  const studentById = {};
+  students.forEach(s => { studentById[s.id] = s; });
+
+  // ---------- KPI tiles ----------
+  const newStudents   = students.filter(s => s.status === 'new');
+  const pendingTutors = teachers.filter(t => t.status === 'new');
+  const activePairs   = students.filter(s => s.status === 'active').length;
+
+  // Enquiries that arrived today.
+  const arrivedToday = students.filter(s => String(s.created_at || '').slice(0, 10) === today).length;
+
+  const weekEnd = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
+  const thisWeek = sessions.filter(s => s.session_date <= weekEnd).length;
+
+  document.getElementById('tiles').innerHTML = [
+    { icon: ICONS.doc,      tone: 'ic-flame', n: newStudents.length,   l: 'New requirements',
+      delta: newStudents.length ? '<span class="pill p-urgent">action</span>' : '' },
+    { icon: ICONS.students, tone: 'ic-warn',  n: pendingTutors.length, l: 'Tutors pending approval',
+      delta: pendingTutors.length ? '<span class="pill p-warn">review</span>' : '' },
+    { icon: ICONS.calendar, tone: 'ic-blue',  n: thisWeek,             l: 'Scheduled visits',
+      delta: '<span class="delta muted">this week</span>' },
+    { icon: ICONS.check,    tone: 'ic-ok',    n: activePairs,          l: 'Active tutor-student pairs',
+      delta: arrivedToday ? '<span class="delta" style="color:var(--ok)">+' + arrivedToday + ' today</span>' : '' }
+  ].map(t => `
+    <div class="tile-card">
+      <div class="top"><span class="ic ${t.tone}">${t.icon}</span>${t.delta}</div>
+      <div class="n">${t.n}</div>
+      <div class="l">${t.l}</div>
+    </div>`).join('');
+
+  // ---------- Today's visits ----------
+  const KEYS = ['k-blue', 'k-green', 'k-flame', 'k-purple', 'k-teal', 'k-amber'];
+  const todaySessions = sessions
+    .filter(s => s.session_date === today)
+    .sort((a, b) => String(a.start_time || '').localeCompare(String(b.start_time || '')));
+
+  document.getElementById('today-date').textContent =
+    new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+  document.getElementById('today-count').textContent = todaySessions.length + ' scheduled';
+
+  document.getElementById('today-list').innerHTML = todaySessions.length
+    ? todaySessions.map((s, i) => {
+        const t = teacherById[s.teacher_id];
+        const st = studentById[s.student_id];
+        const bits = [s.subject, st && st.student_class, st && (st.area || st.locality)].filter(Boolean);
+        const tone = s.status === 'completed' ? 'p-ok' : s.status === 'scheduled' ? 'p-ok' : 'p-info';
+        return `
+          <div class="visit ${KEYS[i % KEYS.length]}">
+            <div class="tm">${fmtTime(s.start_time)}</div>
+            <div class="info">
+              <b>${escapeHtml((t && t.full_name) || 'Unassigned')} &rarr; ${escapeHtml((st && st.student_name) || 'Unknown')}</b>
+              <small>${escapeHtml(bits.join(' · ')) || '&nbsp;'}</small>
+            </div>
+            <div class="spacer"></div>
+            <span class="pill ${tone}">${escapeHtml(String(s.status || 'scheduled').replace(/_/g, ' '))}</span>
+          </div>`;
+      }).join('')
+    : '<div class="empty-state"><div class="big">Nothing scheduled today</div>Add a session from the <a href="calendar.html" style="color:var(--blue-deep);font-weight:700">Schedule</a> page.</div>';
+
+  // ---------- Needs matching ----------
+  const waiting = newStudents.slice(0, 6);
+  document.getElementById('matching-count').textContent = newStudents.length + ' waiting';
+
+  document.getElementById('matching-list').innerHTML = waiting.length
+    ? waiting.map(s => {
+        const bits = [s.student_class, s.subjects, s.locality].filter(Boolean);
+        return `
+          <div class="visit k-flame">
+            <div class="info">
+              <b>${escapeHtml(s.student_name || s.parent_name || '—')}</b>
+              <small>${escapeHtml(bits.join(' · ')) || '&nbsp;'}</small>
+            </div>
+            <div class="spacer"></div>
+            <a class="rowbtn" href="students.html">Find tutor</a>
+          </div>`;
+      }).join('')
+    : '<div class="empty-state"><div class="big">All caught up</div>Every enquiry has been picked up.</div>';
+
+  // ---------- Recent tables ----------
+  document.getElementById('recent-students').innerHTML = students.length
+    ? students.slice(0, 6).map(s => `
+        <tr>
+          <td>${person(s.student_name || s.parent_name, s.parent_name ? 'Parent: ' + s.parent_name : '')}</td>
+          <td class="muted">${escapeHtml(s.student_class || '—')}</td>
+          <td class="muted">${escapeHtml(s.locality || '—')}</td>
+          <td>${badge(s.status)}</td>
+          <td class="muted">${fmtDate(s.created_at)}</td>
+        </tr>`).join('')
+    : '<tr><td colspan="5" class="empty-state"><div class="big">No enquiries yet</div>They will appear here as soon as someone submits the Find a Tutor form.</td></tr>';
+
+  document.getElementById('recent-teachers').innerHTML = teachers.length
+    ? teachers.slice(0, 6).map(t => `
+        <tr>
+          <td>${person(t.full_name, t.locality || '')}</td>
+          <td>${subjectChips(t.subjects, 2)}</td>
+          <td>${badge(t.status)}</td>
+        </tr>`).join('')
+    : '<tr><td colspan="3" class="empty-state"><div class="big">No applications yet</div>They will appear here after someone submits the Become a Tutor form.</td></tr>';
+
+  // ---------- Footnote ----------
+  const total = students.length + teachers.length;
+  document.getElementById('footnote').innerHTML = total
+    ? ICONS.info + '<span>Showing live data from your Supabase project &mdash; ' + students.length +
+      ' student enquir' + (students.length === 1 ? 'y' : 'ies') + ' and ' + teachers.length +
+      ' tutor application' + (teachers.length === 1 ? '' : 's') + ' on record.</span>'
+    : ICONS.info + '<span>No records yet. If your website forms have been live for a while, open ' +
+      '<a href="diagnose.html" style="color:var(--blue-deep);font-weight:700">Self-check</a> to confirm submissions are reaching the database.</span>';
+})();
+</script>
+</body>
+</html>
