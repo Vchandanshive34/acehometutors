@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Ace Home Tutors — Admin</title>
+<link rel="stylesheet" href="assets/admin.css">
+<style>
+  .boot { min-height: 100vh; display: grid; place-items: center; }
+  .boot p { color: var(--ink-faint); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="boot"><p>Loading admin panel&hellip;</p></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script>
+  // /admin/ has no page of its own — send people to the dashboard if they
+  // are already signed in, otherwise to the login screen.
+  (function () {
+    function go(page) { window.location.replace(page); }
+
+    if (!window.supabase || !window.ACE_SUPABASE_URL) { go('login.html'); return; }
+
+    var sb = window.supabase.createClient(window.ACE_SUPABASE_URL, window.ACE_SUPABASE_ANON_KEY);
+    sb.auth.getSession()
+      .then(function (res) { go(res && res.data && res.data.session ? 'dashboard.html' : 'login.html'); })
+      .catch(function () { go('login.html'); });
+
+    // Safety net if Supabase never answers.
+    setTimeout(function () { go('login.html'); }, 4000);
+  })();
+</script>
+</body>
+</html>
