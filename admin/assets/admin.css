@@ -89,11 +89,8 @@ table{border-collapse:collapse}
 }
 
 .brand{display:flex;align-items:center;gap:.6rem;padding:.3rem .4rem 1.2rem;color:#fff}
-.brand .tile{
-  flex:none;width:36px;height:36px;border-radius:24%;
-  background:var(--blue);display:grid;place-items:center;
-  color:#fff;font-family:var(--font-display);font-weight:800;font-size:.95rem;
-}
+.brand .logo{flex:none;height:38px;width:auto;display:block}
+.brand .brand-sub{display:block}
 .brand b{font-family:var(--font-display);font-weight:800;font-size:1.02rem;color:#fff;letter-spacing:-.01em;line-height:1.15}
 .brand b i{color:var(--flame);font-style:normal}
 .brand small{display:block;font-family:var(--font);font-weight:600;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:#6B7A94}
@@ -150,7 +147,7 @@ table{border-collapse:collapse}
   position:sticky;top:0;z-index:20;
 }
 .topbar .mtile{display:flex;align-items:center;gap:.5rem}
-.topbar .mtile .tile{width:30px;height:30px;border-radius:24%;background:var(--blue);display:grid;place-items:center;color:#fff;font-family:var(--font-display);font-weight:800;font-size:.8rem}
+.topbar .mtile .logo{height:28px;width:auto;display:block;color:#fff}
 .topbar .mtile b{font-family:var(--font-display);font-weight:800}
 .topbar .mtile b i{color:var(--flame);font-style:normal}
 @media (min-width:1000px){.topbar .mtile{display:none}}
@@ -416,6 +413,7 @@ textarea{resize:vertical;width:100%}
   padding:2rem 1.8rem;box-shadow:var(--shadow-md);
 }
 .login-card .brand{padding:0 0 1.2rem;justify-content:center;color:var(--ink)}
+.login-card .brand .logo{height:46px}
 .login-card .brand b{color:var(--ink)}
 .login-card .brand small{color:var(--ink-faint)}
 .login-card p.sub{color:var(--ink-faint);text-align:center;margin:-.7rem 0 1.3rem;font-size:.85rem}
